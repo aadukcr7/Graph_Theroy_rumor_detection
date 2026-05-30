@@ -168,6 +168,66 @@ def generate_organic_graph() -> nx.DiGraph:
     return _create_branched_tree(node_count, (3.0, 9.0), (1, 2))
 
 
+def generate_graph(label: str, node_count: int) -> nx.DiGraph:
+    """Generate one propagation tree with an exact node count.
+
+    This is used by the Flask app so the user can request a graph with a
+    chosen number of vertices and immediately visualize the result.
+    """
+
+    node_count = max(3, int(node_count))
+    normalized_label = label.strip().lower()
+
+    if normalized_label == "rumor":
+        graph_type = random.choice(["star", "hub", "branched"])
+        if graph_type == "star":
+            return _create_star_graph(node_count, (0.5, 2.0))
+        if graph_type == "hub":
+            return _create_hub_and_spoke_tree(node_count, (0.5, 2.5))
+        return _create_branched_tree(node_count, (0.5, 2.2), (2, 4))
+
+    graph_type = random.choice(["path", "sparse", "chain"])
+    if graph_type == "path":
+        return _create_path_graph(node_count, (3.0, 8.0))
+    if graph_type == "sparse":
+        return _create_sparse_tree(node_count, (2.5, 7.5))
+    return _create_branched_tree(node_count, (3.0, 9.0), (1, 2))
+
+
+def graph_to_payload(graph: nx.DiGraph, label: str | None = None) -> dict:
+    """Convert a generated graph into a JSON-serializable payload."""
+
+    payload_nodes = [
+        {
+            "id": int(node_id),
+            "label": "Source" if node_id == 0 else f"V{node_id}",
+            "timestamp": float(data.get("timestamp", 0.0)),
+        }
+        for node_id, data in graph.nodes(data=True)
+    ]
+
+    payload_links = [
+        {
+            "source": int(source),
+            "target": int(target),
+            "delay": float(data.get("delay", 0.0)),
+            "weight": float(data.get("weight", 0.0)),
+            "timestamp": float(data.get("timestamp", 0.0)),
+        }
+        for source, target, data in graph.edges(data=True)
+    ]
+
+    features = compute_graph_features(graph)
+    if label is not None:
+        features["label"] = label
+
+    return {
+        "nodes": payload_nodes,
+        "links": payload_links,
+        "features": features,
+    }
+
+
 def build_dataset(rumor_count: int = RUMOR_COUNT, organic_count: int = ORGANIC_COUNT) -> pd.DataFrame:
     """Generate the full labeled dataset and return it as a DataFrame."""
 
