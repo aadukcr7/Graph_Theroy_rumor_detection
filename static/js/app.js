@@ -13,6 +13,12 @@ const svg = d3.select("#graph-svg");
 
 const compareSvgRumor = d3.select("#compare-rumor");
 const compareSvgOrganic = d3.select("#compare-organic");
+const compareRumorZoomOutButton = document.getElementById("compare-rumor-zoom-out");
+const compareRumorZoomResetButton = document.getElementById("compare-rumor-zoom-reset");
+const compareRumorZoomInButton = document.getElementById("compare-rumor-zoom-in");
+const compareOrganicZoomOutButton = document.getElementById("compare-organic-zoom-out");
+const compareOrganicZoomResetButton = document.getElementById("compare-organic-zoom-reset");
+const compareOrganicZoomInButton = document.getElementById("compare-organic-zoom-in");
 
 const tooltip = d3.select("body")
   .append("div")
@@ -190,7 +196,7 @@ function renderGraph(graphData) {
 
 function renderMiniGraph(targetSvg, graphData, tint) {
   if (!targetSvg.node() || !graphData) {
-    return;
+    return null;
   }
 
   const width = 520;
@@ -207,6 +213,17 @@ function renderMiniGraph(targetSvg, graphData, tint) {
     .force("charge", d3.forceManyBody().strength(-300))
     .force("center", d3.forceCenter((width - 32) / 2, (height - 32) / 2))
     .force("collision", d3.forceCollide().radius(22));
+
+  const zoomBehavior = d3
+    .zoom()
+    .scaleExtent([0.45, 2.6])
+    .on("zoom", (event) => {
+      container.attr("transform", event.transform);
+    });
+
+  const initialTransform = d3.zoomIdentity.scale(0.92).translate(14, 10);
+  targetSvg.call(zoomBehavior);
+  targetSvg.call(zoomBehavior.transform, initialTransform);
 
   container.append("rect")
     .attr("x", 0)
@@ -246,6 +263,30 @@ function renderMiniGraph(targetSvg, graphData, tint) {
       .attr("y2", (d) => d.target.y);
 
     node.attr("transform", (d) => `translate(${d.x}, ${d.y})`);
+  });
+
+  return {
+    svg: targetSvg,
+    zoomBehavior,
+    initialTransform,
+  };
+}
+
+function bindCompareZoomControls(controller, zoomOutBtn, zoomInBtn, zoomResetBtn) {
+  if (!controller || !zoomOutBtn || !zoomInBtn || !zoomResetBtn) {
+    return;
+  }
+
+  zoomOutBtn.addEventListener("click", () => {
+    controller.svg.transition().duration(170).call(controller.zoomBehavior.scaleBy, 0.84);
+  });
+
+  zoomInBtn.addEventListener("click", () => {
+    controller.svg.transition().duration(170).call(controller.zoomBehavior.scaleBy, 1.2);
+  });
+
+  zoomResetBtn.addEventListener("click", () => {
+    controller.svg.transition().duration(170).call(controller.zoomBehavior.transform, controller.initialTransform);
   });
 }
 
@@ -338,6 +379,19 @@ if (svg.node()) {
 }
 
 if (compareData) {
-  renderMiniGraph(compareSvgRumor, compareData.rumor, "#2f8bff");
-  renderMiniGraph(compareSvgOrganic, compareData.organic, "#69c7ff");
+  const rumorController = renderMiniGraph(compareSvgRumor, compareData.rumor, "#2f8bff");
+  const organicController = renderMiniGraph(compareSvgOrganic, compareData.organic, "#69c7ff");
+
+  bindCompareZoomControls(
+    rumorController,
+    compareRumorZoomOutButton,
+    compareRumorZoomInButton,
+    compareRumorZoomResetButton
+  );
+  bindCompareZoomControls(
+    organicController,
+    compareOrganicZoomOutButton,
+    compareOrganicZoomInButton,
+    compareOrganicZoomResetButton
+  );
 }

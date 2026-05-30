@@ -411,6 +411,23 @@ body {
   gap: 12px;
 }
 
+.compare-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.compare-zoom-actions {
+  display: inline-flex;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .pill {
   padding: 8px 12px;
   border-radius: 999px;
