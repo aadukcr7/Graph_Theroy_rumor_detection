@@ -153,6 +153,10 @@ body {
 
 .home-overview-panel {
   margin-top: 18px;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: sectionFadeIn 420ms ease-out forwards;
+  animation-delay: 70ms;
 }
 
 .home-overview-head p {
@@ -172,6 +176,25 @@ body {
   border-radius: 16px;
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.04);
+  opacity: 0;
+  transform: translateY(8px);
+  animation: itemFadeIn 420ms ease-out forwards;
+}
+
+.workflow-step:nth-child(1) {
+  animation-delay: 150ms;
+}
+
+.workflow-step:nth-child(2) {
+  animation-delay: 220ms;
+}
+
+.workflow-step:nth-child(3) {
+  animation-delay: 290ms;
+}
+
+.workflow-step:nth-child(4) {
+  animation-delay: 360ms;
 }
 
 .step-index {
@@ -205,6 +228,10 @@ body {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: sectionFadeIn 420ms ease-out forwards;
+  animation-delay: 240ms;
 }
 
 .legend-list {
@@ -236,6 +263,28 @@ body {
   margin: 0;
   color: var(--muted);
   line-height: 1.55;
+}
+
+@keyframes sectionFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes itemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .compare-layout {
@@ -618,5 +667,15 @@ body {
 
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-overview-panel,
+  .home-bottom-grid,
+  .workflow-step {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }
