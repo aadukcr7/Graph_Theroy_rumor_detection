@@ -80,7 +80,7 @@ def _compute_degree_centralization(graph: nx.Graph) -> float:
     return float(numerator / (node_count - 2))
 
 
-def compute_graph_features(graph: nx.Graph) -> Dict[str, float]:
+def compute_graph_features(graph: nx.Graph) -> Dict[str, float | str]:
     """Extract the feature vector used by the classifier.
 
     The temporal metrics are read from edge attributes:
@@ -90,14 +90,18 @@ def compute_graph_features(graph: nx.Graph) -> Dict[str, float]:
     """
 
     if graph.number_of_nodes() == 0:
-        return {column: 0.0 for column in FEATURE_COLUMNS}
+        empty_features: Dict[str, float | str] = {column: 0.0 for column in FEATURE_COLUMNS}
+        empty_features["center"] = "-"
+        return empty_features
 
     undirected = _as_undirected_connected_graph(graph)
     node_count = undirected.number_of_nodes()
     edge_count = undirected.number_of_edges()
 
     if node_count == 0:
-        return {column: 0.0 for column in FEATURE_COLUMNS}
+        empty_features: Dict[str, float | str] = {column: 0.0 for column in FEATURE_COLUMNS}
+        empty_features["center"] = "-"
+        return empty_features
 
     degrees = dict(undirected.degree())
     degree_values = list(degrees.values())
@@ -108,11 +112,15 @@ def compute_graph_features(graph: nx.Graph) -> Dict[str, float]:
     if node_count > 1 and nx.is_connected(undirected):
         diameter = float(nx.diameter(undirected))
         radius = float(nx.radius(undirected))
+        center_nodes = nx.center(undirected)
         avg_shortest_path = float(nx.average_shortest_path_length(undirected))
     else:
         diameter = 0.0
         radius = 0.0
+        center_nodes = []
         avg_shortest_path = 0.0
+
+    center = ", ".join("Source" if node == 0 else f"V{node}" for node in center_nodes) if center_nodes else "-"
 
     temporal_weights = []
     temporal_delays = []
@@ -144,6 +152,7 @@ def compute_graph_features(graph: nx.Graph) -> Dict[str, float]:
         "density": float(nx.density(undirected)),
         "diameter": diameter,
         "radius": radius,
+        "center": center,
         "clustering": float(nx.average_clustering(undirected)),
         "avg_shortest_path": avg_shortest_path,
         "degree_centrality_mean": _safe_average(degree_centrality.values()),
