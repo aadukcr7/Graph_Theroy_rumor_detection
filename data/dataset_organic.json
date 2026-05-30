@@ -1,0 +1,26 @@
+{
+  "label": "organic",
+  "nodes": [
+    { "id": 0, "label": "Source", "timestamp": "2026-05-30T08:00:00" },
+    { "id": 1, "label": "U1", "timestamp": "2026-05-30T14:00:00" },
+    { "id": 2, "label": "U2", "timestamp": "2026-05-30T20:30:00" },
+    { "id": 3, "label": "U3", "timestamp": "2026-05-31T02:00:00" },
+    { "id": 4, "label": "U4", "timestamp": "2026-05-31T10:00:00" },
+    { "id": 5, "label": "U5", "timestamp": "2026-05-31T18:00:00" },
+    { "id": 6, "label": "U6", "timestamp": "2026-06-01T09:00:00" },
+    { "id": 7, "label": "U7", "timestamp": "2026-06-01T20:00:00" },
+    { "id": 8, "label": "U8", "timestamp": "2026-06-02T08:00:00" },
+    { "id": 9, "label": "U9", "timestamp": "2026-06-02T21:00:00" }
+  ],
+  "edges": [
+    { "source": 0, "target": 1, "dt": 360, "weight": 0.144 },
+    { "source": 1, "target": 2, "dt": 390, "weight": 0.140 },
+    { "source": 2, "target": 3, "dt": 330, "weight": 0.146 },
+    { "source": 3, "target": 4, "dt": 480, "weight": 0.128 },
+    { "source": 4, "target": 5, "dt": 480, "weight": 0.128 },
+    { "source": 5, "target": 6, "dt": 900, "weight": 0.103 },
+    { "source": 6, "target": 7, "dt": 660, "weight": 0.115 },
+    { "source": 7, "target": 8, "dt": 720, "weight": 0.109 },
+    { "source": 8, "target": 9, "dt": 780, "weight": 0.106 }
+  ]
+}
