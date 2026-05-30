@@ -249,6 +249,20 @@
         </div>
         <button class="btn primary" onclick="generateGraph()">⟳ Generate Random Graph</button>
         <button class="btn danger" onclick="clearGraph()">✕ Clear</button>
+        <div class="ctrl-group" style="min-width:220px;">
+          <label>Load Dataset</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="sample-select" style="flex:1;padding:6px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text2)">
+              <option value="">-- Select sample --</option>
+              <option value="data/dataset_rumor.json">Sample: Rumor</option>
+              <option value="data/dataset_organic.json">Sample: Organic</option>
+            </select>
+            <button class="btn" onclick="loadSelectedSample()">Load</button>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+            <input id="file-input" type="file" accept="application/json" onchange="loadDatasetFromFile(event)" style="flex:1" />
+          </div>
+        </div>
       </div>
 
       <div class="graph-wrap">
@@ -533,6 +547,51 @@ function clearGraph() {
     document.getElementById(id).textContent = '—';
   });
   document.getElementById('pred-bar').style.display = 'none';
+}
+
+/* ===== DATASET LOADING ===== */
+function loadSelectedSample() {
+  const sel = document.getElementById('sample-select').value;
+  if (!sel) return alert('Choose a sample dataset first');
+  fetch(sel).then(r=>{
+    if(!r.ok) throw new Error('Failed to fetch dataset (serve via HTTP or use file input)');
+    return r.json();
+  }).then(data=> applyLoadedDataset(data)).catch(err=> alert(err.message));
+}
+
+function loadDatasetFromFile(e) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      applyLoadedDataset(data);
+    } catch (err) { alert('Invalid JSON file'); }
+  };
+  r.readAsText(f);
+}
+
+function applyLoadedDataset(data) {
+  // Expecting { label, nodes:[{id,label,timestamp}], edges:[{source,target,dt?,weight?}] }
+  if (!data || !Array.isArray(data.nodes) || !Array.isArray(data.edges)) { alert('Malformed dataset'); return; }
+  // normalize nodes & edges
+  graphNodes = data.nodes.map(n => ({ id: n.id, label: n.label || ('U'+n.id), timestamp: n.timestamp }));
+  graphLinks = data.edges.map(e => ({ source: e.source, target: e.target, dt: e.dt !== undefined ? e.dt : null, weight: e.weight !== undefined ? e.weight : null }));
+  // if dt missing but timestamps exist, compute dt in minutes
+  const nodeMap = {};
+  graphNodes.forEach(n=>{ nodeMap[n.id]=n; if (n.timestamp) n._ts = new Date(n.timestamp); });
+  graphLinks.forEach(l=>{
+    if ((l.dt === null || l.dt === undefined) && nodeMap[l.source] && nodeMap[l.target] && nodeMap[l.source]._ts && nodeMap[l.target]._ts) {
+      const dtMin = (nodeMap[l.target]._ts - nodeMap[l.source]._ts) / 60000.0;
+      l.dt = Math.max(0.001, Math.round(dtMin*1000)/1000);
+      l.weight = 1/Math.log(1 + l.dt);
+    }
+  });
+  // set mode hint from dataset label
+  if (data.label === 'rumor' || data.label === 'organic') setMode(data.label);
+  renderGraph();
+  computeMetrics();
 }
 
 function renderGraph() {
