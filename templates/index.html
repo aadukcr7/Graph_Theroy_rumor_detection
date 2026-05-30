@@ -78,6 +78,72 @@
         </section>
       </aside>
     </main>
+
+    <section class="panel home-overview-panel">
+      <div class="home-overview-head">
+        <div>
+          <h2>Analysis Workflow</h2>
+          <p>From synthetic cascade generation to interpretable rumor prediction.</p>
+        </div>
+      </div>
+      <div class="workflow-grid">
+        <article class="workflow-step">
+          <span class="step-index">01</span>
+          <h3>Generate a temporal tree</h3>
+          <p>A directed propagation tree is sampled as rumor-like or organic-like with edge-level delay and timestamp attributes.</p>
+        </article>
+        <article class="workflow-step">
+          <span class="step-index">02</span>
+          <h3>Compute graph features</h3>
+          <p>Structural and temporal metrics are extracted, including diameter, radius, center, density, and average temporal weight.</p>
+        </article>
+        <article class="workflow-step">
+          <span class="step-index">03</span>
+          <h3>Run classifier inference</h3>
+          <p>The RandomForest model maps the feature vector to rumor or organic class and returns confidence.</p>
+        </article>
+        <article class="workflow-step">
+          <span class="step-index">04</span>
+          <h3>Interpret propagation behavior</h3>
+          <p>Use edge tooltips, prediction confidence, and summary cards to explain the result with graph theory concepts.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="home-bottom-grid">
+      <section class="panel legend-panel">
+        <h2>How to read the graph</h2>
+        <ul class="legend-list">
+          <li>Node 0 is the source vertex where diffusion starts.</li>
+          <li>Thicker edges represent stronger temporal weight from faster repost delay.</li>
+          <li>Diameter and radius summarize global path spread in the undirected view.</li>
+          <li>Center identifies structurally central vertices with minimum eccentricity.</li>
+          <li>Prediction confidence indicates how strongly features match known patterns.</li>
+        </ul>
+      </section>
+
+      <section class="panel legend-panel">
+        <h2>Feature groups used by the model</h2>
+        <div class="feature-group-grid">
+          <article>
+            <h3>Size and shape</h3>
+            <p>Nodes, edges, average degree, max degree, branching factor, and leaf ratio.</p>
+          </article>
+          <article>
+            <h3>Path structure</h3>
+            <p>Density, diameter, radius, center, and average shortest path length.</p>
+          </article>
+          <article>
+            <h3>Centrality profile</h3>
+            <p>Degree centrality, betweenness, closeness, and overall centralization.</p>
+          </article>
+          <article>
+            <h3>Temporal behavior</h3>
+            <p>Per-edge temporal weighting, average temporal weight, and diffusion speed.</p>
+          </article>
+        </div>
+      </section>
+    </section>
   </div>
 {% endblock %}
 

@@ -151,6 +151,93 @@ body {
   margin-top: 18px;
 }
 
+.home-overview-panel {
+  margin-top: 18px;
+}
+
+.home-overview-head p {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+
+.workflow-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.workflow-step {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(47, 139, 255, 0.32);
+  background: rgba(47, 139, 255, 0.14);
+  color: #9fd1ff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.workflow-step h3 {
+  margin-bottom: 8px;
+}
+
+.workflow-step p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.58;
+}
+
+.home-bottom-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.legend-list {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.feature-group-grid {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.feature-group-grid article {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.feature-group-grid h3 {
+  margin-bottom: 8px;
+}
+
+.feature-group-grid p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
 .compare-layout {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -288,6 +375,10 @@ body {
   padding-left: 18px;
   color: var(--muted);
   line-height: 1.65;
+}
+
+.math-layout-spaced {
+  margin-top: 14px;
 }
 
 .side-column {
@@ -499,6 +590,12 @@ body {
   .compare-table,
   .info-grid,
   .math-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .workflow-grid,
+  .home-bottom-grid,
+  .feature-group-grid {
     grid-template-columns: 1fr;
   }
 

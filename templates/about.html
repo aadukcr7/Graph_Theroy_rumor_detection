@@ -59,7 +59,7 @@
         </article>
       </div>
 
-      <div class="math-layout" style="margin-top: 14px;">
+      <div class="math-layout math-layout-spaced">
         <article class="math-card">
           <h3>Edge-level implementation</h3>
           <ul class="math-list">
@@ -110,7 +110,7 @@
             <li>Degree centrality: deg(v) / (|V|-1).</li>
             <li>Betweenness centrality: fraction of shortest paths that pass through a node.</li>
             <li>Closeness centrality: inverse of average distance from a node to others.</li>
-            <li>Degree centralization: Σ(max(CD) - CD(v)) / (|V|-2), a Freeman-style score.</li>
+            <li>Degree centralization: sum(max(CD) - CD(v)) / (|V|-2), a Freeman-style score.</li>
             <li>Branching factor and leaf ratio quantify tree spread shape and terminal-node concentration.</li>
           </ul>
         </article>
@@ -119,7 +119,7 @@
           <ul class="math-list">
             <li>Each edge stores delay delta_t and cumulative timestamp t(parent)+delta_t.</li>
             <li>Average temporal weight summarizes urgency of repost behavior.</li>
-            <li>Diffusion speed is approximated as 1 / mean(Δt), with a tiny epsilon for stability.</li>
+            <li>Diffusion speed is approximated as 1 / mean(delta_t), with a tiny epsilon for stability.</li>
             <li>This combines topological and temporal signals in one feature vector.</li>
           </ul>
         </article>
