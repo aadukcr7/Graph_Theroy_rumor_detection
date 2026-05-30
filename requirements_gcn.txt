@@ -1,0 +1,10 @@
+# PyTorch and PyTorch Geometric are platform-specific. Follow the official install guides:
+#  - PyTorch: https://pytorch.org/get-started/locally/
+#  - PyG: https://pytorch-geometric.readthedocs.io/en/latest/notes/installation.html
+# Example (CPU-only) commands that often work on modern systems:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+#   pip install torch-scatter torch-sparse torch-cluster torch-spline-conv torch-geometric -f https://data.pyg.org/whl/torch-<TORCH_VERSION>+cpu.html
+# Replace <TORCH_VERSION> with your installed torch version, e.g. 2.2.0
+
+# After installing PyTorch/Geometric, you can run the GCN trainer:
+#   python train_gcn.py --data-dir data --model-out models/gcn.pth --epochs 50

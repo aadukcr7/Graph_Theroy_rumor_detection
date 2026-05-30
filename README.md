@@ -45,5 +45,16 @@ If you'd like, I can:
 - Extract JS into `src/` and create a small dev server
 - Integrate a pretrained model for real predictions
 
+GCN Prototype
+-------------
+I added a prototype GCN trainer `train_gcn.py` that uses PyTorch Geometric to train a graph-level GCN on the JSON datasets in `data/`. Installing PyTorch and PyG requires following their platform-specific instructions — see `requirements_gcn.txt` for guidance.
+
+Quick start for GCN (after installing dependencies):
+```
+python train_gcn.py --data-dir data --model-out models/gcn.pth --epochs 50
+```
+
+The script uses simple node features (degree, minutes since source). It's a starting point — to get professional results, add richer node/edge features and tune the model.
+
 ---
 Authored by: UI demo authors (adapted)
