@@ -8,8 +8,8 @@
         <h1>Why propagation structure matters</h1>
         <p class="lead">
           This project studies how rumors and organic information spread through temporal propagation trees.
-          It uses interpretable graph features rather than a graph neural network, which keeps the method simple,
-          explainable, and suitable for a final-year graph theory project.
+          It uses interpretable graph-theory and time-aware mathematical features instead of a graph neural network,
+          so every prediction can be explained directly using equations and structural properties of the graph.
         </p>
       </div>
     </div>
@@ -19,15 +19,109 @@
       <div class="info-grid">
         <article>
           <h3>Graph generation</h3>
-          <p>Rumor graphs are generated as star-like, hub-heavy, and rapidly branching trees. Organic graphs are generated as paths and sparse chains.</p>
+          <p>Rumor graphs are generated as star-like, hub-heavy, and rapidly branching trees. Organic graphs are generated as longer paths and sparse chains. Both are modeled as temporal directed trees where each edge represents one repost action.</p>
         </article>
         <article>
           <h3>Temporal modeling</h3>
-          <p>Each edge carries a delay and a timestamp. Fast reposts receive larger temporal weights, so the model sees both structure and speed.</p>
+          <p>Each edge stores delay, timestamp, and temporal weight. Fast reposts receive larger weights, while slow reposts receive smaller weights. This encodes propagation speed directly into the graph structure used for learning.</p>
         </article>
         <article>
           <h3>Classification</h3>
-          <p>A RandomForestClassifier learns from the extracted graph metrics and predicts whether a cascade looks like rumor or organic information.</p>
+          <p>A RandomForestClassifier learns nonlinear decision boundaries from the extracted feature vector and predicts whether a cascade is rumor-like or organic, with confidence returned from class probabilities.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel info-panel">
+      <h2>Temporal weighting feature</h2>
+      <div class="math-layout">
+        <article class="math-card">
+          <h3>Weight equation</h3>
+          <p class="equation">w(i,j) = 1 / ln(1 + delta_t)</p>
+          <p>
+            Here, delta_t is the repost delay on edge (i,j). If delta_t is small (fast repost), the denominator is small and the
+            weight is large. If delta_t is large (slow repost), the denominator grows and the weight decreases.
+          </p>
+        </article>
+        <article class="math-card">
+          <h3>Why logarithmic scaling</h3>
+          <p>
+            A logarithm compresses extreme delays so a very late repost does not dominate the entire feature space.
+            This keeps the model numerically stable and preserves meaningful differences among early and medium delays.
+          </p>
+        </article>
+        <article class="math-card">
+          <h3>How it is used</h3>
+          <p>
+            The system computes average temporal weight across all edges. Rumor-like cascades usually have many early
+            reposts, so their average temporal weight tends to be higher than in slower organic cascades.
+          </p>
+        </article>
+      </div>
+
+      <div class="math-layout" style="margin-top: 14px;">
+        <article class="math-card">
+          <h3>Edge-level implementation</h3>
+          <ul class="math-list">
+            <li>For each directed edge (u,v), the generator samples a repost delay delta_t.</li>
+            <li>It stores timestamp(v) = timestamp(u) + delta_t.</li>
+            <li>It computes edge weight(u,v) = 1 / ln(1 + delta_t).</li>
+            <li>This weight is saved on that exact edge and sent to the frontend payload.</li>
+            <li>In the graph view, edge thickness is proportional to this weight.</li>
+            <li>On hover, tooltip now shows delay, stored weight, and formula evaluation for that edge.</li>
+          </ul>
+        </article>
+        <article class="math-card">
+          <h3>Worked example on one edge</h3>
+          <p>
+            If one repost has delta_t = 2.00, then
+            weight = 1 / ln(1 + 2.00) = 1 / ln(3.00) approx 0.910.
+            If another edge has delta_t = 6.00, then weight = 1 / ln(7.00) approx 0.514.
+            So the faster edge receives a larger temporal influence in both visualization and model features.
+          </p>
+        </article>
+        <article class="math-card">
+          <h3>Code mapping</h3>
+          <ul class="math-list">
+            <li>Weight computation is implemented in compute_edge_weight(delay).</li>
+            <li>Per-edge attributes delay, timestamp, and weight are attached when edges are created.</li>
+            <li>Average temporal weight and diffusion speed are derived from edge delays and weights in feature extraction.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel info-panel">
+      <h2>Mathematics used in this project</h2>
+      <div class="math-layout">
+        <article class="math-card">
+          <h3>Graph structure metrics</h3>
+          <ul class="math-list">
+            <li>Density: 2|E| / (|V|(|V|-1)) for undirected view of the cascade.</li>
+            <li>Diameter: max shortest-path distance between node pairs.</li>
+            <li>Radius: minimum eccentricity across nodes.</li>
+            <li>Center: nodes whose eccentricity equals the radius.</li>
+            <li>Average shortest path: mean of shortest-path lengths over node pairs.</li>
+          </ul>
+        </article>
+        <article class="math-card">
+          <h3>Centrality and shape</h3>
+          <ul class="math-list">
+            <li>Degree centrality: deg(v) / (|V|-1).</li>
+            <li>Betweenness centrality: fraction of shortest paths that pass through a node.</li>
+            <li>Closeness centrality: inverse of average distance from a node to others.</li>
+            <li>Degree centralization: Σ(max(CD) - CD(v)) / (|V|-2), a Freeman-style score.</li>
+            <li>Branching factor and leaf ratio quantify tree spread shape and terminal-node concentration.</li>
+          </ul>
+        </article>
+        <article class="math-card">
+          <h3>Time-to-diffusion mathematics</h3>
+          <ul class="math-list">
+            <li>Each edge stores delay delta_t and cumulative timestamp t(parent)+delta_t.</li>
+            <li>Average temporal weight summarizes urgency of repost behavior.</li>
+            <li>Diffusion speed is approximated as 1 / mean(Δt), with a tiny epsilon for stability.</li>
+            <li>This combines topological and temporal signals in one feature vector.</li>
+          </ul>
         </article>
       </div>
     </section>
@@ -35,9 +129,11 @@
     <section class="panel info-panel">
       <h2>Key features</h2>
       <div class="feature-tags">
-        <span>Nodes</span><span>Edges</span><span>Density</span><span>Diameter</span><span>Radius</span><span>Clustering</span>
-        <span>Degree Centrality</span><span>Betweenness</span><span>Closeness</span><span>Centralization</span>
-        <span>Temporal Weight</span><span>Diffusion Speed</span><span>Branching Factor</span><span>Leaf Ratio</span>
+        <span>Nodes</span><span>Edges</span><span>Average Degree</span><span>Maximum Degree</span><span>Density</span>
+        <span>Diameter</span><span>Radius</span><span>Center</span><span>Average Shortest Path</span>
+        <span>Clustering</span><span>Degree Centrality (Mean/Max)</span><span>Betweenness</span><span>Closeness</span>
+        <span>Centralization</span><span>Temporal Weight</span><span>Diffusion Speed</span>
+        <span>Branching Factor</span><span>Leaf Ratio</span>
       </div>
     </section>
   </section>
