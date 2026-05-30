@@ -23,10 +23,9 @@ const statLabels = [
   ["Edges", "edges"],
   ["Density", "density"],
   ["Diameter", "diameter"],
-  ["Clustering Coefficient", "clustering"],
-  ["Centralization", "centralization"],
+  ["Radius", "radius"],
+  ["Center", "center"],
   ["Temporal Weight", "avg_temporal_weight"],
-  ["Diffusion Speed", "diffusion_speed"],
 ];
 
 let currentGraph = null;
@@ -35,16 +34,33 @@ let mainZoomBehavior = null;
 
 const compareData = window.COMPARE_DATA || null;
 
+function computeTemporalWeight(delay) {
+  const numericDelay = Number(delay);
+  if (!Number.isFinite(numericDelay) || numericDelay <= 0) {
+    return 0;
+  }
+  return 1 / Math.log1p(numericDelay);
+}
+
 function formatValue(value) {
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "0.00";
   }
 
-  if (typeof value === "number" && Number.isInteger(value)) {
-    return value.toString();
+  if (typeof value === "string") {
+    return value;
   }
 
-  return Number(value).toFixed(2);
+  const numericValue = Number(value);
+  if (Number.isNaN(numericValue)) {
+    return String(value);
+  }
+
+  if (Number.isInteger(numericValue)) {
+    return numericValue.toString();
+  }
+
+  return numericValue.toFixed(2);
 }
 
 function renderStats(features) {
@@ -105,12 +121,16 @@ function renderGraph(graphData) {
     .attr("stroke-opacity", 0.78)
     .attr("stroke-width", (d) => 1.2 + d.weight * 1.6)
     .on("mousemove", (event, d) => {
+      const delay = Number(d.delay);
+      const formulaWeight = computeTemporalWeight(delay);
       tooltip
         .style("opacity", 1)
         .style("transform", "translateY(0)")
         .style("left", `${event.pageX + 12}px`)
         .style("top", `${event.pageY - 42}px`)
-        .html(`Delay: ${Number(d.delay).toFixed(2)}<br/>Weight: ${Number(d.weight).toFixed(2)}`);
+        .html(
+          `Delay (delta_t): ${delay.toFixed(2)}<br/>Stored weight: ${Number(d.weight).toFixed(3)}<br/>Formula: 1 / ln(1 + delta_t) = ${formulaWeight.toFixed(3)}`
+        );
     })
     .on("mouseleave", () => {
       tooltip.style("opacity", 0).style("transform", "translateY(4px)");
