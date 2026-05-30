@@ -140,6 +140,110 @@ body {
   font-size: 1.1rem;
 }
 
+.home-hero {
+  position: relative;
+  overflow: hidden;
+  align-items: stretch;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(105, 199, 255, 0.22), transparent 34%),
+    radial-gradient(circle at 88% 84%, rgba(47, 139, 255, 0.18), transparent 42%),
+    linear-gradient(132deg, rgba(8, 18, 36, 0.98), rgba(4, 9, 20, 0.96));
+}
+
+.home-hero::before {
+  content: "";
+  position: absolute;
+  right: -120px;
+  top: -80px;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(105, 199, 255, 0.13), rgba(105, 199, 255, 0));
+  pointer-events: none;
+}
+
+.hero-main {
+  flex: 1 1 62%;
+  min-width: 280px;
+}
+
+.hero-main h1 {
+  max-width: 16ch;
+}
+
+.hero-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hero-action-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.secondary-button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  background: rgba(47, 139, 255, 0.12);
+}
+
+.hero-aside {
+  flex: 1 1 38%;
+  min-width: 280px;
+  display: grid;
+  gap: 12px;
+}
+
+.hero-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.hero-kpi-card {
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.hero-kpi-card span {
+  display: block;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.hero-kpi-card strong {
+  display: block;
+  margin-top: 6px;
+  color: #d8ecff;
+  font-size: 1.02rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.hero-kpi-card em {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-style: normal;
+  font-size: 0.82rem;
+}
+
 .compact-hero {
   margin-bottom: 18px;
 }
@@ -650,6 +754,10 @@ body {
 
   .hero {
     flex-direction: column;
+  }
+
+  .hero-kpi-grid {
+    grid-template-columns: 1fr;
   }
 }
 
