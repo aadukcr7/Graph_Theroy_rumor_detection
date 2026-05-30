@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from flask import Flask, jsonify, render_template, request
 
-from dataset_generator import build_dataset
+from dataset_generator import build_dataset, generate_graph, graph_to_payload
 from feature_extractor import FEATURE_COLUMNS
 from train_model import train_and_save_model
 
@@ -48,11 +48,21 @@ FEATURE_DEFAULTS = MODEL_BUNDLE["feature_defaults"]
 def index():
     """Render the local graph visualization dashboard."""
 
-    return render_template(
-        "index.html",
-        feature_columns=MODEL_FEATURE_COLUMNS,
-        feature_defaults=FEATURE_DEFAULTS,
-    )
+    return render_template("index.html")
+
+
+@app.route("/about")
+def about():
+    """Render the project description page."""
+
+    return render_template("about.html")
+
+
+@app.route("/compare")
+def compare():
+    """Render the rumor versus organic comparison page."""
+
+    return render_template("compare.html")
 
 
 @app.route("/predict", methods=["POST"])
@@ -82,6 +92,35 @@ def predict():
         confidence = 0.0
 
     return jsonify({"prediction": prediction, "confidence": round(confidence, 4)})
+
+
+@app.route("/generate-graph", methods=["POST"])
+def generate_graph_endpoint():
+    """Generate a new propagation tree from the local synthetic dataset logic."""
+
+    payload = request.get_json(silent=True) or {}
+    label = str(payload.get("label", "rumor"))
+
+    try:
+        vertex_count = int(payload.get("vertices", 12))
+    except (TypeError, ValueError):
+        vertex_count = 12
+
+    graph = generate_graph(label, vertex_count)
+    graph_payload = graph_to_payload(graph, label=label)
+
+    frame = pd.DataFrame([graph_payload["features"]], columns=MODEL_FEATURE_COLUMNS)
+    prediction = MODEL.predict(frame)[0]
+    confidence = float(np.max(MODEL.predict_proba(frame))) if hasattr(MODEL, "predict_proba") else 0.0
+
+    return jsonify(
+        {
+            "label": label,
+            "prediction": prediction,
+            "confidence": round(confidence, 4),
+            "graph": graph_payload,
+        }
+    )
 
 
 if __name__ == "__main__":
