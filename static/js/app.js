@@ -1,105 +1,116 @@
-const sampleGraph = {
-  nodes: [
-    { id: 0, label: "Source" },
-    { id: 1, label: "Share A" },
-    { id: 2, label: "Share B" },
-    { id: 3, label: "Share C" },
-    { id: 4, label: "Share D" },
-    { id: 5, label: "Share E" },
-    { id: 6, label: "Share F" },
-  ],
-  links: [
-    { source: 0, target: 1, delay: 0.9, weight: 1.52 },
-    { source: 0, target: 2, delay: 1.2, weight: 1.24 },
-    { source: 0, target: 3, delay: 1.5, weight: 1.09 },
-    { source: 1, target: 4, delay: 1.1, weight: 1.30 },
-    { source: 1, target: 5, delay: 0.8, weight: 1.64 },
-    { source: 2, target: 6, delay: 1.7, weight: 0.99 },
-  ],
-  metrics: {
-    nodes: 7,
-    edges: 6,
-    density: 0.29,
-    diameter: 3,
-    clustering: 0.18,
-    centralization: 0.73,
-    temporalWeight: 1.30,
-    diffusionSpeed: 0.93,
-  },
-};
-
-const featureColumns = window.PROJECT_FEATURES || [];
-const featureDefaults = window.PROJECT_DEFAULTS || {};
 const statsGrid = document.getElementById("stats-grid");
 const predictionBadge = document.getElementById("prediction-badge");
 const predictionResult = document.getElementById("prediction-result");
 const confidenceResult = document.getElementById("confidence-result");
-const predictButton = document.getElementById("predict-button");
-const predictionForm = document.getElementById("prediction-form");
+const generateForm = document.getElementById("graph-form");
+const generateButton = document.getElementById("generate-button");
+const vertexCountInput = document.getElementById("vertex-count");
+const graphLabelInput = document.getElementById("graph-label");
+const zoomOutButton = document.getElementById("zoom-out");
+const zoomResetButton = document.getElementById("zoom-reset");
+const zoomInButton = document.getElementById("zoom-in");
 const svg = d3.select("#graph-svg");
+
+const compareSvgRumor = d3.select("#compare-rumor");
+const compareSvgOrganic = d3.select("#compare-organic");
 
 const tooltip = d3.select("body")
   .append("div")
   .attr("class", "tooltip");
 
-const statCards = [
-  ["Nodes", sampleGraph.metrics.nodes],
-  ["Edges", sampleGraph.metrics.edges],
-  ["Density", sampleGraph.metrics.density],
-  ["Diameter", sampleGraph.metrics.diameter],
-  ["Clustering Coefficient", sampleGraph.metrics.clustering],
-  ["Centralization", sampleGraph.metrics.centralization],
-  ["Temporal Weight", sampleGraph.metrics.temporalWeight],
-  ["Diffusion Speed", sampleGraph.metrics.diffusionSpeed],
+const statLabels = [
+  ["Nodes", "nodes"],
+  ["Edges", "edges"],
+  ["Density", "density"],
+  ["Diameter", "diameter"],
+  ["Clustering Coefficient", "clustering"],
+  ["Centralization", "centralization"],
+  ["Temporal Weight", "avg_temporal_weight"],
+  ["Diffusion Speed", "diffusion_speed"],
 ];
 
+let currentGraph = null;
+let currentSimulation = null;
+let mainZoomBehavior = null;
+
+const compareData = window.COMPARE_DATA || null;
+
 function formatValue(value) {
-  return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "0.00";
+  }
+
+  if (typeof value === "number" && Number.isInteger(value)) {
+    return value.toString();
+  }
+
+  return Number(value).toFixed(2);
 }
 
-function renderStats() {
-  statsGrid.innerHTML = statCards
-    .map(
-      ([label, value]) => `
+function renderStats(features) {
+  statsGrid.innerHTML = statLabels
+    .map(([label, key]) => {
+      const value = features?.[key] ?? 0;
+      return `
         <div class="stat-card">
           <span>${label}</span>
           <strong>${formatValue(value)}</strong>
         </div>
-      `
-    )
+      `;
+    })
     .join("");
 }
 
-function renderGraph() {
-  const width = 760;
-  const height = 520;
+function renderGraph(graphData) {
+  const width = 860;
+  const height = 560;
 
   svg.selectAll("*").remove();
 
+  if (currentSimulation) {
+    currentSimulation.stop();
+    currentSimulation = null;
+  }
+
   const container = svg.append("g").attr("transform", "translate(20,20)");
+  const nodes = graphData.nodes.map((node) => ({ ...node }));
+  const links = graphData.links.map((link) => ({ ...link }));
+
   const simulation = d3
-    .forceSimulation(sampleGraph.nodes)
-    .force("link", d3.forceLink(sampleGraph.links).id((d) => d.id).distance(98))
-    .force("charge", d3.forceManyBody().strength(-320))
+    .forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id((d) => d.id).distance(102))
+    .force("charge", d3.forceManyBody().strength(-360))
     .force("center", d3.forceCenter((width - 40) / 2, (height - 40) / 2))
-    .force("collision", d3.forceCollide().radius(28));
+    .force("collision", d3.forceCollide().radius(30));
+
+  mainZoomBehavior = d3
+    .zoom()
+    .scaleExtent([0.35, 2.8])
+    .on("zoom", (event) => {
+      container.attr("transform", event.transform);
+    });
+
+  svg.call(mainZoomBehavior);
+  svg.call(mainZoomBehavior.transform, d3.zoomIdentity.scale(0.82).translate(18, 12));
+
+  currentSimulation = simulation;
 
   const link = container
     .append("g")
     .selectAll("line")
-    .data(sampleGraph.links)
+    .data(links)
     .join("line")
-    .attr("stroke", "#0f5f73")
+    .attr("stroke", "#2f8bff")
     .attr("stroke-linecap", "round")
-    .attr("stroke-opacity", 0.8)
-    .attr("stroke-width", (d) => 1.5 + d.weight * 1.5)
+    .attr("stroke-opacity", 0.78)
+    .attr("stroke-width", (d) => 1.2 + d.weight * 1.6)
     .on("mousemove", (event, d) => {
       tooltip
         .style("opacity", 1)
         .style("transform", "translateY(0)")
         .style("left", `${event.pageX + 12}px`)
-        .style("top", `${event.pageY - 36}px`)
-        .html(`Delay: ${d.delay.toFixed(2)}<br/>Weight: ${d.weight.toFixed(2)}`);
+        .style("top", `${event.pageY - 42}px`)
+        .html(`Delay: ${Number(d.delay).toFixed(2)}<br/>Weight: ${Number(d.weight).toFixed(2)}`);
     })
     .on("mouseleave", () => {
       tooltip.style("opacity", 0).style("transform", "translateY(4px)");
@@ -108,7 +119,7 @@ function renderGraph() {
   const node = container
     .append("g")
     .selectAll("g")
-    .data(sampleGraph.nodes)
+    .data(nodes)
     .join("g")
     .call(d3.drag()
       .on("start", dragStarted)
@@ -117,15 +128,15 @@ function renderGraph() {
 
   node.append("circle")
     .attr("r", (d) => (d.id === 0 ? 21 : 16))
-    .attr("fill", (d) => (d.id === 0 ? "#8b2f1f" : "#f1d9bd"))
-    .attr("stroke", "#17202a")
-    .attr("stroke-width", 1.2);
+    .attr("fill", (d) => (d.id === 0 ? "#2f8bff" : "#0f1728"))
+    .attr("stroke", (d) => (d.id === 0 ? "#8cc8ff" : "#2f8bff"))
+    .attr("stroke-width", 1.6);
 
   node.append("text")
     .text((d) => (d.id === 0 ? "Source" : d.label))
     .attr("text-anchor", "middle")
     .attr("dy", 35)
-    .attr("fill", "#17202a")
+    .attr("fill", "#cfe8ff")
     .attr("font-size", 12)
     .attr("font-weight", 700);
 
@@ -157,6 +168,67 @@ function renderGraph() {
   }
 }
 
+function renderMiniGraph(targetSvg, graphData, tint) {
+  if (!targetSvg.node() || !graphData) {
+    return;
+  }
+
+  const width = 520;
+  const height = 360;
+  targetSvg.selectAll("*").remove();
+
+  const container = targetSvg.append("g").attr("transform", "translate(16,16)");
+  const nodes = graphData.nodes.map((node) => ({ ...node }));
+  const links = graphData.links.map((link) => ({ ...link }));
+
+  const simulation = d3
+    .forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id((d) => d.id).distance(76))
+    .force("charge", d3.forceManyBody().strength(-300))
+    .force("center", d3.forceCenter((width - 32) / 2, (height - 32) / 2))
+    .force("collision", d3.forceCollide().radius(22));
+
+  container.append("rect")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", width - 32)
+    .attr("height", height - 32)
+    .attr("rx", 16)
+    .attr("fill", "transparent");
+
+  const link = container.append("g").selectAll("line").data(links).join("line")
+    .attr("stroke", tint)
+    .attr("stroke-linecap", "round")
+    .attr("stroke-opacity", 0.9)
+    .attr("stroke-width", (d) => 1.2 + d.weight * 1.2);
+
+  const node = container.append("g").selectAll("g").data(nodes).join("g");
+
+  node.append("circle")
+    .attr("r", (d) => (d.id === 0 ? 18 : 13))
+    .attr("fill", (d) => (d.id === 0 ? tint : "#0a1529"))
+    .attr("stroke", tint)
+    .attr("stroke-width", 1.4);
+
+  node.append("text")
+    .text((d) => (d.id === 0 ? "Source" : d.label))
+    .attr("text-anchor", "middle")
+    .attr("dy", 28)
+    .attr("fill", "#d9ebff")
+    .attr("font-size", 11)
+    .attr("font-weight", 700);
+
+  simulation.on("tick", () => {
+    link
+      .attr("x1", (d) => d.source.x)
+      .attr("y1", (d) => d.source.y)
+      .attr("x2", (d) => d.target.x)
+      .attr("y2", (d) => d.target.y);
+
+    node.attr("transform", (d) => `translate(${d.x}, ${d.y})`);
+  });
+}
+
 function setPredictionState(label, confidence) {
   predictionResult.textContent = label;
   confidenceResult.textContent = confidence.toFixed(2);
@@ -174,45 +246,78 @@ function setPredictionState(label, confidence) {
   }
 }
 
-async function predictFromForm() {
-  const formData = new FormData(predictionForm);
-  const payload = {};
-
-  for (const key of featureColumns) {
-    if (formData.has(key)) {
-      payload[key] = Number(formData.get(key));
-    }
-  }
-
-  const response = await fetch("/predict", {
+async function generateGraph() {
+  const response = await fetch("/generate-graph", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      vertices: Number(vertexCountInput.value),
+      label: graphLabelInput.value,
+    }),
   });
 
   if (!response.ok) {
-    throw new Error("Prediction request failed");
+    throw new Error("Graph generation request failed");
   }
 
   return response.json();
 }
 
-predictButton.addEventListener("click", async () => {
-  predictButton.disabled = true;
-  predictButton.textContent = "Predicting...";
+async function refreshGraph() {
+  generateButton.disabled = true;
+  generateButton.textContent = "Generating...";
 
   try {
-    const result = await predictFromForm();
+    const result = await generateGraph();
+    currentGraph = result.graph;
+    renderGraph(currentGraph);
+    renderStats(currentGraph.features);
     setPredictionState(result.prediction, result.confidence);
   } catch (error) {
-    setPredictionState("organic", 0.0);
+    setPredictionState("--", 0.0);
     console.error(error);
   } finally {
-    predictButton.disabled = false;
-    predictButton.textContent = "Predict Rumor Risk";
+    generateButton.disabled = false;
+    generateButton.textContent = "Generate from Dataset";
   }
-});
+}
 
-renderStats();
-renderGraph();
-setPredictionState("organic", 0.0);
+if (generateForm) {
+  generateForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    refreshGraph();
+  });
+}
+
+if (zoomOutButton) {
+  zoomOutButton.addEventListener("click", () => {
+    if (svg.node() && mainZoomBehavior) {
+      svg.transition().duration(180).call(mainZoomBehavior.scaleBy, 0.82);
+    }
+  });
+}
+
+if (zoomInButton) {
+  zoomInButton.addEventListener("click", () => {
+    if (svg.node() && mainZoomBehavior) {
+      svg.transition().duration(180).call(mainZoomBehavior.scaleBy, 1.22);
+    }
+  });
+}
+
+if (zoomResetButton) {
+  zoomResetButton.addEventListener("click", () => {
+    if (svg.node() && mainZoomBehavior) {
+      svg.transition().duration(180).call(mainZoomBehavior.transform, d3.zoomIdentity.scale(0.82).translate(18, 12));
+    }
+  });
+}
+
+if (svg.node()) {
+  refreshGraph();
+}
+
+if (compareData) {
+  renderMiniGraph(compareSvgRumor, compareData.rumor, "#2f8bff");
+  renderMiniGraph(compareSvgOrganic, compareData.organic, "#69c7ff");
+}
