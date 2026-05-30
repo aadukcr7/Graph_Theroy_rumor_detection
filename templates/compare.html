@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="hero compact-hero">
+      <div>
+        <p class="eyebrow">Comparison</p>
+        <h1>Rumor versus organic propagation</h1>
+        <p class="lead">
+          The same graph-theoretic lens shows two very different diffusion patterns.
+          Rumors are faster and more centralized, while organic information spreads more gradually.
+        </p>
+      </div>
+    </div>
+
+    <section class="compare-layout">
+      <article class="panel compare-card">
+        <div class="compare-head">
+          <h2>Rumor Example</h2>
+          <span class="pill rumor-pill">Fast diffusion</span>
+        </div>
+        <svg id="compare-rumor" class="compare-svg" viewBox="0 0 520 360" aria-label="Rumor graph example"></svg>
+        <ul class="compare-list">
+          <li>Star-like or hub-and-spoke structure</li>
+          <li>High centralization and high max degree</li>
+          <li>Small diameter and short propagation delay</li>
+          <li>Thicker edges because temporal weights are larger</li>
+        </ul>
+      </article>
+
+      <article class="panel compare-card">
+        <div class="compare-head">
+          <h2>Organic Example</h2>
+          <span class="pill organic-pill">Slow diffusion</span>
+        </div>
+        <svg id="compare-organic" class="compare-svg" viewBox="0 0 520 360" aria-label="Organic graph example"></svg>
+        <ul class="compare-list">
+          <li>Path-like or sparse chain structure</li>
+          <li>Lower centralization and lower hub dominance</li>
+          <li>Larger diameter and longer propagation delay</li>
+          <li>Thinner edges because temporal weights are smaller</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="panel info-panel">
+      <h2>What changes between the two?</h2>
+      <div class="compare-table">
+        <div><strong>Topology</strong><span>Rumor is compact and radial; organic is elongated and chain-like.</span></div>
+        <div><strong>Speed</strong><span>Rumor reaches many nodes quickly; organic spreads more slowly.</span></div>
+        <div><strong>Centrality</strong><span>Rumor concentrates activity around one source; organic distributes activity across the path.</span></div>
+        <div><strong>Temporal weight</strong><span>Rumor edges have smaller delays and therefore higher weights.</span></div>
+      </div>
+    </section>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    window.COMPARE_DATA = {
+      rumor: {
+        nodes: [
+          { id: 0, label: 'Source' },
+          { id: 1, label: 'A' },
+          { id: 2, label: 'B' },
+          { id: 3, label: 'C' },
+          { id: 4, label: 'D' },
+          { id: 5, label: 'E' }
+        ],
+        links: [
+          { source: 0, target: 1, delay: 0.7, weight: 1.71 },
+          { source: 0, target: 2, delay: 0.8, weight: 1.64 },
+          { source: 0, target: 3, delay: 1.0, weight: 1.44 },
+          { source: 0, target: 4, delay: 0.9, weight: 1.52 },
+          { source: 1, target: 5, delay: 1.1, weight: 1.30 }
+        ]
+      },
+      organic: {
+        nodes: [
+          { id: 0, label: 'Source' },
+          { id: 1, label: 'A' },
+          { id: 2, label: 'B' },
+          { id: 3, label: 'C' },
+          { id: 4, label: 'D' },
+          { id: 5, label: 'E' }
+        ],
+        links: [
+          { source: 0, target: 1, delay: 4.2, weight: 0.67 },
+          { source: 1, target: 2, delay: 4.8, weight: 0.61 },
+          { source: 2, target: 3, delay: 5.1, weight: 0.59 },
+          { source: 3, target: 4, delay: 6.0, weight: 0.51 },
+          { source: 4, target: 5, delay: 5.6, weight: 0.54 }
+        ]
+      }
+    };
+  </script>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <section class="page-shell">
+    <div class="hero compact-hero">
+      <div>
+        <p class="eyebrow">About the Project</p>
+        <h1>Why propagation structure matters</h1>
+        <p class="lead">
+          This project studies how rumors and organic information spread through temporal propagation trees.
+          It uses interpretable graph features rather than a graph neural network, which keeps the method simple,
+          explainable, and suitable for a final-year graph theory project.
+        </p>
+      </div>
+    </div>
+
+    <section class="panel info-panel">
+      <h2>Method</h2>
+      <div class="info-grid">
+        <article>
+          <h3>Graph generation</h3>
+          <p>Rumor graphs are generated as star-like, hub-heavy, and rapidly branching trees. Organic graphs are generated as paths and sparse chains.</p>
+        </article>
+        <article>
+          <h3>Temporal modeling</h3>
+          <p>Each edge carries a delay and a timestamp. Fast reposts receive larger temporal weights, so the model sees both structure and speed.</p>
+        </article>
+        <article>
+          <h3>Classification</h3>
+          <p>A RandomForestClassifier learns from the extracted graph metrics and predicts whether a cascade looks like rumor or organic information.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel info-panel">
+      <h2>Key features</h2>
+      <div class="feature-tags">
+        <span>Nodes</span><span>Edges</span><span>Density</span><span>Diameter</span><span>Radius</span><span>Clustering</span>
+        <span>Degree Centrality</span><span>Betweenness</span><span>Closeness</span><span>Centralization</span>
+        <span>Temporal Weight</span><span>Diffusion Speed</span><span>Branching Factor</span><span>Leaf Ratio</span>
+      </div>
+    </section>
+  </section>
+{% endblock %}

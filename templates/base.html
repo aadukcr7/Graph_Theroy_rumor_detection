@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title or "Structural Diffusion Analysis" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar">
+      <a class="brand" href="/">Structural Diffusion Analysis</a>
+      <nav class="topnav">
+        <a href="/" class="nav-link">Home</a>
+        <a href="/about" class="nav-link">About</a>
+        <a href="/compare" class="nav-link">Compare</a>
+      </nav>
+    </header>
+
+    {% block content %}{% endblock %}
+  </div>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>
