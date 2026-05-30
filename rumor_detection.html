@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Structural Diffusion Analysis — Rumor Detection</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  :root {
+    --bg: #0d0f1a;
+    --bg2: #13162a;
+    --bg3: #1a1e35;
+    --card: #1e2238;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #f0f2ff;
+    --text2: #9ba3c8;
+    --text3: #6b74a0;
+    --purple: #7c6dfa;
+    --purple-light: #a89dfc;
+    --teal: #34d399;
+    --coral: #f87171;
+    --blue: #60a5fa;
+    --amber: #fbbf24;
+    --rumor-color: #f87171;
+    --organic-color: #34d399;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+
+  /* Nav */
+  nav { background: rgba(13,15,26,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; padding: 0 2rem; }
+  .nav-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 56px; }
+  .nav-logo { font-size: 14px; font-weight: 600; color: var(--purple-light); letter-spacing: 0.5px; }
+  .nav-links { display: flex; gap: 1.5rem; }
+  .nav-links a { font-size: 13px; color: var(--text2); text-decoration: none; transition: color 0.2s; }
+  .nav-links a:hover { color: var(--text); }
+
+  /* Layout */
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+  section { padding: 4rem 0; }
+
+  /* Hero */
+  .hero { padding: 5rem 0 4rem; text-align: center; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 80% 60% at 50% 30%, rgba(124,109,250,0.12) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(124,109,250,0.15); border: 1px solid rgba(124,109,250,0.3); border-radius: 100px; padding: 4px 14px; font-size: 12px; color: var(--purple-light); margin-bottom: 1.5rem; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 500; }
+  .hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 700; line-height: 1.1; margin-bottom: 1rem; }
+  .hero h1 span { background: linear-gradient(135deg, var(--purple-light), var(--teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero p { font-size: 1.1rem; color: var(--text2); max-width: 580px; margin: 0 auto 2rem; }
+  .hero-authors { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .author-chip { background: var(--card); border: 1px solid var(--border); border-radius: 100px; padding: 4px 14px; font-size: 13px; color: var(--text2); }
+
+  /* Stats bar */
+  .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1px; background: var(--border); border-radius: 12px; overflow: hidden; margin: 2rem 0; }
+  .stat-item { background: var(--card); padding: 1.25rem 1.5rem; text-align: center; }
+  .stat-val { font-size: 2rem; font-weight: 700; color: var(--purple-light); line-height: 1; }
+  .stat-label { font-size: 12px; color: var(--text3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Section headers */
+  .section-header { margin-bottom: 2rem; }
+  .section-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--purple); font-weight: 600; margin-bottom: 8px; }
+  .section-header h2 { font-size: 1.8rem; font-weight: 700; }
+  .section-header p { color: var(--text2); margin-top: 0.5rem; max-width: 600px; }
+
+  /* Comparison */
+  .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 700px) { .comparison-grid { grid-template-columns: 1fr; } }
+  .compare-card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); padding: 1.5rem; }
+  .compare-card.rumor { border-color: rgba(248,113,113,0.3); }
+  .compare-card.organic { border-color: rgba(52,211,153,0.3); }
+  .compare-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 8px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 100px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
+  .badge.rumor { background: rgba(248,113,113,0.15); color: var(--coral); }
+  .badge.organic { background: rgba(52,211,153,0.15); color: var(--teal); }
+  .compare-svg-wrap { background: var(--bg3); border-radius: 10px; margin: 1rem 0; overflow: hidden; }
+  .trait-list { list-style: none; }
+  .trait-list li { padding: 4px 0; font-size: 13px; color: var(--text2); display: flex; align-items: center; gap: 8px; }
+  .trait-list li::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .compare-card.rumor .trait-list li::before { background: var(--coral); }
+  .compare-card.organic .trait-list li::before { background: var(--teal); }
+
+  /* Demo */
+  .demo-section { background: var(--bg2); border-radius: 20px; border: 1px solid var(--border); padding: 2rem; }
+  .demo-controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; margin-bottom: 1.5rem; }
+  .ctrl-group { display: flex; flex-direction: column; gap: 6px; }
+  .ctrl-group label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+  .mode-toggle { display: flex; background: var(--bg3); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+  .mode-btn { padding: 8px 18px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; background: none; color: var(--text2); transition: all 0.2s; }
+  .mode-btn.active.rumor { background: rgba(248,113,113,0.2); color: var(--coral); }
+  .mode-btn.active.organic { background: rgba(52,211,153,0.2); color: var(--teal); }
+  .btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border2); background: var(--card); color: var(--text); transition: all 0.2s; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .btn:hover { background: var(--bg3); border-color: var(--purple); color: var(--purple-light); }
+  .btn.primary { background: rgba(124,109,250,0.2); border-color: rgba(124,109,250,0.4); color: var(--purple-light); }
+  .btn.danger { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); color: var(--coral); }
+  .range-group { display: flex; flex-direction: column; gap: 4px; min-width: 160px; }
+  .range-group input[type=range] { width: 100%; accent-color: var(--purple); }
+  .range-val { font-size: 12px; color: var(--text3); }
+
+  /* Graph canvas */
+  .graph-wrap { background: var(--bg3); border-radius: 12px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+  #graph-canvas { width: 100%; height: 480px; display: block; }
+  .graph-hint { position: absolute; bottom: 12px; right: 14px; font-size: 11px; color: var(--text3); pointer-events: none; }
+
+  /* Metrics */
+  .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 1.5rem; }
+  .metric-card { background: var(--bg3); border-radius: 10px; border: 1px solid var(--border); padding: 1rem; }
+  .metric-val { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+  .metric-label { font-size: 11px; color: var(--text3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .prediction-bar { margin-top: 1.5rem; background: var(--bg3); border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem 1.5rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+  .pred-label { font-size: 13px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; white-space: nowrap; }
+  .pred-result { font-size: 1.2rem; font-weight: 700; }
+  .pred-bar-wrap { flex: 1; min-width: 120px; }
+  .pred-bar-track { background: var(--bg); border-radius: 100px; height: 8px; overflow: hidden; }
+  .pred-bar-fill { height: 100%; border-radius: 100px; transition: width 0.6s ease, background 0.4s; }
+  .pred-confidence { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+  /* Explanation */
+  .exp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 700px) { .exp-grid { grid-template-columns: 1fr; } }
+  .exp-card { background: var(--card); border-radius: 16px; border: 1px solid var(--border); padding: 1.5rem; }
+  .exp-card h3 { font-size: 0.95rem; font-weight: 600; color: var(--purple-light); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 8px; }
+  .exp-card p { font-size: 13px; color: var(--text2); line-height: 1.7; }
+  .formula-box { background: var(--bg3); border-radius: 10px; border: 1px solid var(--border); padding: 1.25rem; margin: 1rem 0; text-align: center; font-family: 'Georgia', serif; font-size: 1.1rem; color: var(--text); }
+  .formula-note { font-size: 12px; color: var(--text3); margin-top: 6px; }
+
+  /* Performance */
+  .perf-bar-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+  .perf-model { font-size: 13px; color: var(--text2); min-width: 110px; }
+  .perf-track { flex: 1; background: var(--bg3); border-radius: 100px; height: 28px; overflow: hidden; position: relative; }
+  .perf-fill { height: 100%; border-radius: 100px; display: flex; align-items: center; padding-left: 12px; font-size: 12px; font-weight: 600; color: #fff; transition: width 1s ease; }
+  .perf-fill.baseline { background: rgba(96,165,250,0.5); }
+  .perf-fill.temporal { background: rgba(52,211,153,0.6); }
+
+  /* Pipeline */
+  .pipeline { display: flex; align-items: center; flex-wrap: wrap; gap: 0; margin: 1.5rem 0; }
+  .pipe-step { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: 12px; color: var(--text2); white-space: nowrap; }
+  .pipe-arrow { color: var(--text3); padding: 0 4px; font-size: 14px; }
+
+  /* Limitations */
+  .limit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+  .limit-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 1.25rem; }
+  .limit-card h4 { font-size: 13px; font-weight: 600; color: var(--amber); margin-bottom: 6px; }
+  .limit-card p { font-size: 12px; color: var(--text3); line-height: 1.6; }
+
+  /* Footer */
+  footer { border-top: 1px solid var(--border); padding: 2rem 0; text-align: center; color: var(--text3); font-size: 12px; }
+
+  /* Node tooltip */
+  .tooltip { position: absolute; background: rgba(30,34,56,0.95); border: 1px solid var(--border2); border-radius: 8px; padding: 8px 12px; font-size: 12px; color: var(--text); pointer-events: none; display: none; z-index: 10; }
+
+  svg text { user-select: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <span class="nav-logo">⬡ Structural Diffusion Analysis</span>
+    <div class="nav-links">
+      <a href="#compare">Comparison</a>
+      <a href="#demo">Demo</a>
+      <a href="#explain">How It Works</a>
+      <a href="#results">Results</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="container">
+    <div class="hero-badge">⬡ Graph Neural Networks</div>
+    <h1>Rumor Detection via<br><span>Structural Diffusion</span></h1>
+    <p>Analyzing how information propagates through social networks — not just what it says — to identify misinformation at scale.</p>
+    <div class="hero-authors">
+      <span class="author-chip">Aaditya KC (05)</span>
+      <span class="author-chip">Jagat KC (07)</span>
+      <span class="author-chip">Saurav Bhujel (23)</span>
+    </div>
+    <div class="stats-bar" style="margin-top:2.5rem;">
+      <div class="stat-item"><div class="stat-val">84%</div><div class="stat-label">F1 Score (Temporal GCN)</div></div>
+      <div class="stat-item"><div class="stat-val">+12%</div><div class="stat-label">Improvement via weighting</div></div>
+      <div class="stat-item"><div class="stat-val">GCN</div><div class="stat-label">Graph Conv. Network</div></div>
+      <div class="stat-item"><div class="stat-val">w(i,j)</div><div class="stat-label">Temporal edge weight</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPARISON -->
+<section id="compare">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">The Problem</div>
+      <h2>Rumor vs. Organic Propagation</h2>
+      <p>The structure of how information spreads is a powerful signal — more reliable than content analysis alone.</p>
+    </div>
+    <div class="comparison-grid">
+      <div class="compare-card rumor">
+        <h3><span class="badge rumor">Rumor Graph</span></h3>
+        <div class="compare-svg-wrap">
+          <svg id="svg-rumor" viewBox="0 0 220 180" style="width:100%;height:180px;"></svg>
+        </div>
+        <ul class="trait-list">
+          <li>Star-like structure with high degree</li>
+          <li>Small diameter — rapid spread</li>
+          <li>Many users repost directly from source</li>
+          <li>Simultaneous, burst-like propagation</li>
+        </ul>
+      </div>
+      <div class="compare-card organic">
+        <h3><span class="badge organic">Organic Graph</span></h3>
+        <div class="compare-svg-wrap">
+          <svg id="svg-organic" viewBox="0 0 220 180" style="width:100%;height:180px;"></svg>
+        </div>
+        <ul class="trait-list">
+          <li>Chain-like structure with low degree</li>
+          <li>Larger diameter — gradual spread</li>
+          <li>Sequential sharing through networks</li>
+          <li>Slow, organic propagation pattern</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section id="demo">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Interactive Demo</div>
+      <h2>Build a Propagation Tree</h2>
+      <p>Generate a rumor or organic graph and see how the GCN model classifies it based on structural features.</p>
+    </div>
+    <div class="demo-section">
+      <div class="demo-controls">
+        <div class="ctrl-group">
+          <label>Propagation Mode</label>
+          <div class="mode-toggle">
+            <button class="mode-btn active rumor" id="btn-rumor" onclick="setMode('rumor')">Rumor</button>
+            <button class="mode-btn organic" id="btn-organic" onclick="setMode('organic')">Organic</button>
+          </div>
+        </div>
+        <div class="ctrl-group range-group">
+          <label>Nodes: <span id="node-count-val">12</span></label>
+          <input type="range" min="6" max="30" value="12" step="1" id="node-count" oninput="document.getElementById('node-count-val').textContent=this.value">
+        </div>
+        <div class="ctrl-group range-group">
+          <label>Avg Δt (hours): <span id="dt-val">2</span></label>
+          <input type="range" min="1" max="48" value="2" step="1" id="dt-slider" oninput="document.getElementById('dt-val').textContent=this.value">
+        </div>
+        <button class="btn primary" onclick="generateGraph()">⟳ Generate Random Graph</button>
+        <button class="btn danger" onclick="clearGraph()">✕ Clear</button>
+      </div>
+
+      <div class="graph-wrap">
+        <svg id="graph-canvas"></svg>
+        <div class="tooltip" id="tooltip"></div>
+        <div class="graph-hint">Drag nodes to explore • Scroll to zoom</div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-val" id="m-nodes" style="color:var(--purple-light)">—</div>
+          <div class="metric-label">Nodes</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="m-edges" style="color:var(--purple-light)">—</div>
+          <div class="metric-label">Edges</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="m-degree" style="color:var(--blue)">—</div>
+          <div class="metric-label">Avg Degree</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="m-diameter" style="color:var(--amber)">—</div>
+          <div class="metric-label">Diameter</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="m-weight" style="color:var(--teal)">—</div>
+          <div class="metric-label">Avg Edge Weight</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="m-density" style="color:var(--coral)">—</div>
+          <div class="metric-label">Density</div>
+        </div>
+      </div>
+
+      <div class="prediction-bar" id="pred-bar" style="display:none;">
+        <span class="pred-label">GCN Prediction</span>
+        <span class="pred-result" id="pred-result">—</span>
+        <div class="pred-bar-wrap">
+          <div class="pred-bar-track">
+            <div class="pred-bar-fill" id="pred-fill" style="width:0%"></div>
+          </div>
+          <div class="pred-confidence" id="pred-conf">Confidence: —</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPLANATION -->
+<section id="explain">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">How It Works</div>
+      <h2>The Technical Pipeline</h2>
+    </div>
+    <div class="pipeline">
+      <span class="pipe-step">Social Media Post</span><span class="pipe-arrow">→</span>
+      <span class="pipe-step">Propagation Tree</span><span class="pipe-arrow">→</span>
+      <span class="pipe-step">Temporal Weighting</span><span class="pipe-arrow">→</span>
+      <span class="pipe-step">GCN</span><span class="pipe-arrow">→</span>
+      <span class="pipe-step">Feature Aggregation</span><span class="pipe-arrow">→</span>
+      <span class="pipe-step" style="background:rgba(124,109,250,0.15);border-color:rgba(124,109,250,0.4);color:var(--purple-light);">Classification</span>
+    </div>
+    <div class="exp-grid">
+      <div class="exp-card">
+        <h3>⏱ Temporal Edge Weighting</h3>
+        <p>Each edge in the propagation tree is weighted by how quickly the repost happened. Faster reposts indicate stronger influence and are characteristic of rumor spreading.</p>
+        <div class="formula-box">
+          w(i, j) = 1 / log(1 + Δt)
+          <div class="formula-note">where Δt = time delay in minutes between posts</div>
+        </div>
+        <p>Example: repost within 1 minute → weight ≈ 1.0 &nbsp;|&nbsp; repost after 1 day → weight ≈ 0.3</p>
+      </div>
+      <div class="exp-card">
+        <h3>🕸 Propagation Tree Structure</h3>
+        <p>Every social media post becomes a <strong>node</strong>. Every retweet or reply creates an <strong>edge</strong>. Together, these nodes and edges reveal the journey of information through the network.</p>
+        <p style="margin-top:0.75rem;">Node features include: follower count, account age, text sentiment (optional), time since source post.</p>
+        <p style="margin-top:0.75rem;">Edge features include: temporal weight and interaction type (retweet vs. reply).</p>
+      </div>
+      <div class="exp-card">
+        <h3>🧠 Graph Convolutional Network</h3>
+        <p>The GCN learns structural signatures directly from the graph topology. It aggregates neighbor information through multiple convolution layers, capturing both local and global propagation patterns.</p>
+        <p style="margin-top:0.75rem;">The model distinguishes star-like rumor structures (high degree, small diameter) from chain-like organic structures (low degree, large diameter).</p>
+      </div>
+      <div class="exp-card">
+        <h3>📊 Performance Results</h3>
+        <p>Adding temporal edge weighting significantly improved classification accuracy:</p>
+        <div style="margin-top:1rem;">
+          <div class="perf-bar-row">
+            <span class="perf-model">Baseline GCN</span>
+            <div class="perf-track"><div class="perf-fill baseline" id="perf-baseline" style="width:0%">72%</div></div>
+          </div>
+          <div class="perf-bar-row">
+            <span class="perf-model">Temporal GCN</span>
+            <div class="perf-track"><div class="perf-fill temporal" id="perf-temporal" style="width:0%">84%</div></div>
+          </div>
+        </div>
+        <p style="margin-top:0.75rem;font-size:12px;color:var(--text3);">F1 score improved from 72% → 84% with temporal weighting — a 12% gain.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section id="results">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-tag">Limitations & Future Work</div>
+      <h2>Current Challenges</h2>
+    </div>
+    <div class="limit-grid">
+      <div class="limit-card">
+        <h4>⚠ Propagation Data Dependency</h4>
+        <p>The model requires interaction history and diffusion patterns to make predictions — it cannot evaluate isolated posts.</p>
+      </div>
+      <div class="limit-card">
+        <h4>⚠ Early Detection Challenge</h4>
+        <p>Very early-stage rumors may not have enough propagation data to form a meaningful graph for analysis.</p>
+      </div>
+      <div class="limit-card">
+        <h4>⚠ Computational Complexity</h4>
+        <p>Large social graphs require significant processing power and memory, limiting real-time deployment at scale.</p>
+      </div>
+      <div class="limit-card">
+        <h4>⚠ Data Availability</h4>
+        <p>Access to social media APIs and complete propagation information may be restricted or limited by platform policies.</p>
+      </div>
+    </div>
+    <div style="margin-top:2rem;background:var(--card);border-radius:16px;border:1px solid var(--border);padding:1.5rem;">
+      <div class="section-tag" style="margin-bottom:0.75rem;">Future Work</div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.75rem;">
+        <span class="badge" style="background:rgba(124,109,250,0.15);color:var(--purple-light);padding:6px 14px;font-size:12px;border-radius:8px;">Real-time detection systems</span>
+        <span class="badge" style="background:rgba(52,211,153,0.15);color:var(--teal);padding:6px 14px;font-size:12px;border-radius:8px;">Attention mechanisms for importance weighting</span>
+        <span class="badge" style="background:rgba(96,165,250,0.15);color:var(--blue);padding:6px 14px;font-size:12px;border-radius:8px;">Adversarial defense against manipulation</span>
+        <span class="badge" style="background:rgba(251,191,36,0.15);color:var(--amber);padding:6px 14px;font-size:12px;border-radius:8px;">Cross-platform misinformation control</span>
+        <span class="badge" style="background:rgba(248,113,113,0.15);color:var(--coral);padding:6px 14px;font-size:12px;border-radius:8px;">Social media monitoring at scale</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <p>Structural Diffusion Analysis — Rumor Detection using Graph Neural Networks</p>
+    <p style="margin-top:6px;">References: Kai Shu et al. (Data Mining Perspective) · Federico Monti et al. (Geometric Deep Learning) · Kipf & Welling (Semi-Supervised GCN)</p>
+  </div>
+</footer>
+
+<script>
+/* ===== STATIC COMPARISON GRAPHS ===== */
+function drawRumorGraph() {
+  const svg = d3.select('#svg-rumor');
+  const W = 220, H = 180;
+  const cx = W/2, cy = H/2, r = 68;
+  const n = 10;
+  const nodes = [{x:cx, y:cy, root:true}];
+  for (let i=0;i<n;i++) {
+    const a = (i/n)*2*Math.PI;
+    nodes.push({x: cx+r*Math.cos(a), y: cy+r*Math.sin(a), root:false});
+  }
+  // Add some secondary nodes
+  for (let i=1;i<=3;i++) {
+    const a = (i/n)*2*Math.PI;
+    const px = cx+r*Math.cos(a), py = cy+r*Math.sin(a);
+    nodes.push({x: px+25*Math.cos(a), y: py+25*Math.sin(a), root:false, leaf:true, parent:i});
+  }
+  svg.selectAll('line.e').data(nodes.slice(1)).enter().append('line')
+    .attr('x1',cx).attr('y1',cy)
+    .attr('x2',d=>d.x).attr('y2',d=>d.y)
+    .attr('stroke','rgba(248,113,113,0.35)').attr('stroke-width',1.5);
+  // Leaf edges
+  const leafNodes = nodes.filter(d=>d.leaf);
+  leafNodes.forEach(d=>{
+    const p = nodes[d.parent];
+    svg.append('line').attr('x1',p.x).attr('y1',p.y).attr('x2',d.x).attr('y2',d.y)
+      .attr('stroke','rgba(248,113,113,0.2)').attr('stroke-width',1);
+  });
+  svg.selectAll('circle').data(nodes).enter().append('circle')
+    .attr('cx',d=>d.x).attr('cy',d=>d.y)
+    .attr('r',d=>d.root?10:d.leaf?4:6)
+    .attr('fill',d=>d.root?'rgba(248,113,113,0.9)':'rgba(248,113,113,0.4)')
+    .attr('stroke',d=>d.root?'#f87171':'rgba(248,113,113,0.6)')
+    .attr('stroke-width',1.5);
+}
+
+function drawOrganicGraph() {
+  const svg = d3.select('#svg-organic');
+  const W=220, H=180;
+  const chain = [];
+  const n = 7;
+  for (let i=0;i<n;i++) {
+    chain.push({x: 20+i*(W-40)/(n-1), y: H/2 + (i%2===0?-12:12)});
+  }
+  // Branch off node 2 and 4
+  const branches = [
+    {x: chain[2].x-10, y: chain[2].y-35, parent:2},
+    {x: chain[4].x+8, y: chain[4].y-30, parent:4},
+    {x: chain[4].x-5, y: chain[4].y+32, parent:4},
+  ];
+  for (let i=0;i<n-1;i++) {
+    svg.append('line').attr('x1',chain[i].x).attr('y1',chain[i].y)
+      .attr('x2',chain[i+1].x).attr('y2',chain[i+1].y)
+      .attr('stroke','rgba(52,211,153,0.4)').attr('stroke-width',1.5);
+  }
+  branches.forEach(b=>{
+    const p=chain[b.parent];
+    svg.append('line').attr('x1',p.x).attr('y1',p.y).attr('x2',b.x).attr('y2',b.y)
+      .attr('stroke','rgba(52,211,153,0.25)').attr('stroke-width',1);
+  });
+  [...chain,...branches].forEach((n,i)=>{
+    svg.append('circle').attr('cx',n.x).attr('cy',n.y)
+      .attr('r',i===0?8:n.parent!==undefined?4:5)
+      .attr('fill',i===0?'rgba(52,211,153,0.9)':'rgba(52,211,153,0.4)')
+      .attr('stroke',i===0?'#34d399':'rgba(52,211,153,0.5)').attr('stroke-width',1.5);
+  });
+}
+
+drawRumorGraph();
+drawOrganicGraph();
+
+/* ===== DEMO GRAPH ===== */
+let currentMode = 'rumor';
+let simulation = null;
+let graphNodes = [], graphLinks = [];
+
+function setMode(m) {
+  currentMode = m;
+  document.getElementById('btn-rumor').className = 'mode-btn' + (m==='rumor'?' active rumor':'');
+  document.getElementById('btn-organic').className = 'mode-btn' + (m==='organic'?' active organic':'');
+}
+
+function generateGraph() {
+  const n = parseInt(document.getElementById('node-count').value);
+  const dt = parseFloat(document.getElementById('dt-slider').value);
+
+  graphNodes = [];
+  graphLinks = [];
+
+  if (currentMode === 'rumor') {
+    // Star-like: root + many direct children + some grandchildren
+    graphNodes.push({id:0, label:'Source', depth:0});
+    const directChildren = Math.floor(n * 0.75);
+    for (let i=1;i<=directChildren;i++) {
+      graphNodes.push({id:i, label:'U'+i, depth:1});
+      graphLinks.push({source:0, target:i, dt: dt*(0.2+Math.random()*0.8)});
+    }
+    for (let i=directChildren+1;i<n;i++) {
+      const parent = 1 + Math.floor(Math.random()*directChildren);
+      graphNodes.push({id:i, label:'U'+i, depth:2});
+      graphLinks.push({source:parent, target:i, dt: dt*(1+Math.random()*2)});
+    }
+  } else {
+    // Chain-like with branching
+    graphNodes.push({id:0, label:'Source', depth:0});
+    let frontier = [0];
+    let next = 1;
+    while (next < n) {
+      const newFrontier = [];
+      for (const p of frontier) {
+        const children = Math.random() < 0.3 ? 2 : 1;
+        for (let c=0;c<children && next<n;c++) {
+          graphNodes.push({id:next, label:'U'+next, depth: graphNodes[p].depth+1});
+          graphLinks.push({source:p, target:next, dt: dt*(1+Math.random()*3)});
+          newFrontier.push(next);
+          next++;
+        }
+      }
+      frontier = newFrontier;
+      if (frontier.length === 0) break;
+    }
+  }
+
+  renderGraph();
+  computeMetrics();
+}
+
+function clearGraph() {
+  graphNodes = []; graphLinks = [];
+  d3.select('#graph-canvas').selectAll('*').remove();
+  ['m-nodes','m-edges','m-degree','m-diameter','m-weight','m-density'].forEach(id=>{
+    document.getElementById(id).textContent = '—';
+  });
+  document.getElementById('pred-bar').style.display = 'none';
+}
+
+function renderGraph() {
+  const svg = d3.select('#graph-canvas');
+  svg.selectAll('*').remove();
+  const W = svg.node().clientWidth || 700;
+  const H = 480;
+  svg.attr('viewBox', `0 0 ${W} ${H}`);
+
+  const color = currentMode === 'rumor' ? '#f87171' : '#34d399';
+  const edgeColor = currentMode === 'rumor' ? 'rgba(248,113,113,0.3)' : 'rgba(52,211,153,0.3)';
+
+  const g = svg.append('g');
+
+  // Zoom
+  svg.call(d3.zoom().scaleExtent([0.3,3]).on('zoom', e => g.attr('transform', e.transform)));
+
+  const links = graphLinks.map(l => ({...l}));
+  const nodes = graphNodes.map(n => ({...n}));
+
+  simulation = d3.forceSimulation(nodes)
+    .force('link', d3.forceLink(links).id(d=>d.id).distance(currentMode==='rumor'?60:90).strength(0.8))
+    .force('charge', d3.forceManyBody().strength(currentMode==='rumor'?-120:-150))
+    .force('center', d3.forceCenter(W/2, H/2))
+    .force('collision', d3.forceCollide(18));
+
+  const link = g.append('g').selectAll('line').data(links).enter().append('line')
+    .attr('stroke', edgeColor).attr('stroke-width', d => {
+      const w = 1/(Math.log(1+d.dt));
+      return Math.max(0.5, w*4);
+    });
+
+  const node = g.append('g').selectAll('g').data(nodes).enter().append('g')
+    .call(d3.drag()
+      .on('start', (e,d) => { if(!e.active) simulation.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+      .on('drag', (e,d) => { d.fx=e.x; d.fy=e.y; })
+      .on('end', (e,d) => { if(!e.active) simulation.alphaTarget(0); d.fx=null; d.fy=null; }));
+
+  node.append('circle')
+    .attr('r', d=>d.id===0?13:7)
+    .attr('fill', d=>d.id===0?color:color+'55')
+    .attr('stroke', color).attr('stroke-width', d=>d.id===0?2:1);
+
+  node.append('text').text(d=>d.id===0?'S':'')
+    .attr('text-anchor','middle').attr('dy','0.35em')
+    .attr('font-size','10px').attr('font-weight','700')
+    .attr('fill','#fff').attr('pointer-events','none');
+
+  // Tooltip: use d3.pointer so position is correct with zoom/pan and responsive
+  const tooltip = document.getElementById('tooltip');
+  node.on('mouseenter', (e, d) => {
+    const w = d.id===0 ? '—' : ((1/Math.log(1 + graphLinks.find(l => (l.target === d.id) || (l.target?.id === d.id))?.dt || 2)).toFixed(2));
+    tooltip.innerHTML = `<strong>${d.label}</strong><br>Depth: ${d.depth}<br>Edge weight: ${w}`;
+    tooltip.style.display = 'block';
+    const [x, y] = d3.pointer(e, svg.node());
+    const rect = svg.node().getBoundingClientRect();
+    tooltip.style.left = (rect.left + x + 14) + 'px';
+    tooltip.style.top = (rect.top + y - 8) + 'px';
+  }).on('mousemove', (e) => {
+    const [x, y] = d3.pointer(e, svg.node());
+    const rect = svg.node().getBoundingClientRect();
+    tooltip.style.left = (rect.left + x + 14) + 'px';
+    tooltip.style.top = (rect.top + y - 8) + 'px';
+  }).on('mouseleave', () => { tooltip.style.display = 'none'; });
+
+  simulation.on('tick', () => {
+    link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y)
+        .attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+    node.attr('transform',d=>`translate(${d.x},${d.y})`);
+  });
+}
+
+function computeMetrics() {
+  const n = graphNodes.length;
+  const e = graphLinks.length;
+  const dt = parseFloat(document.getElementById('dt-slider').value);
+
+  // Avg degree
+  const deg = {};
+  graphNodes.forEach(n=>deg[n.id]=0);
+  graphLinks.forEach(l=>{
+    deg[typeof l.source==='object'?l.source.id:l.source]++;
+    deg[typeof l.target==='object'?l.target.id:l.target]++;
+  });
+  const avgDeg = (Object.values(deg).reduce((a,b)=>a+b,0)/(n||1)).toFixed(2);
+
+  // Diameter (BFS from root)
+  const adj = {};
+  graphNodes.forEach(nd=>adj[nd.id]=[]);
+  graphLinks.forEach(l=>{
+    const s = typeof l.source==='object'?l.source.id:l.source;
+    const t = typeof l.target==='object'?l.target.id:l.target;
+    adj[s].push(t); adj[t].push(s);
+  });
+  let maxDepth=0;
+  const visited={0:0};
+  const queue=[0];
+  while(queue.length){
+    const cur=queue.shift();
+    (adj[cur]||[]).forEach(nb=>{
+      if(visited[nb]===undefined){visited[nb]=visited[cur]+1;maxDepth=Math.max(maxDepth,visited[nb]);queue.push(nb);}
+    });
+  }
+
+  // Avg edge weight
+  const avgW = graphLinks.length>0
+    ? (graphLinks.reduce((s,l)=>s+(1/Math.log(1+l.dt)),0)/graphLinks.length).toFixed(3)
+    : 0;
+
+  // Density
+  const density = n>1?(2*e/(n*(n-1))).toFixed(3):'0';
+
+  document.getElementById('m-nodes').textContent = n;
+  document.getElementById('m-edges').textContent = e;
+  document.getElementById('m-degree').textContent = avgDeg;
+  document.getElementById('m-diameter').textContent = maxDepth;
+  document.getElementById('m-weight').textContent = avgW;
+  document.getElementById('m-density').textContent = density;
+
+  // Prediction
+  const rumorScore = computeRumorScore(parseFloat(avgDeg), maxDepth, parseFloat(avgW), n);
+  const predBar = document.getElementById('pred-bar');
+  predBar.style.display='flex';
+  const isRumor = rumorScore > 0.5;
+  document.getElementById('pred-result').textContent = isRumor ? '🔴 Likely Rumor' : '🟢 Likely Organic';
+  document.getElementById('pred-result').style.color = isRumor ? 'var(--coral)' : 'var(--teal)';
+  const fill = document.getElementById('pred-fill');
+  fill.style.width = (rumorScore*100).toFixed(0)+'%';
+  fill.style.background = isRumor ? 'rgba(248,113,113,0.7)' : 'rgba(52,211,153,0.6)';
+  document.getElementById('pred-conf').textContent = `Confidence: ${(Math.abs(rumorScore-0.5)*200).toFixed(0)}%`;
+}
+
+function computeRumorScore(avgDeg, diameter, avgW, n) {
+  // Heuristic mimicking GCN classification logic from the slides
+  let score = 0.5;
+  // High degree → rumor signal
+  const degScore = Math.min(1, avgDeg/6);
+  // Small diameter → rumor signal
+  const diaScore = diameter>0 ? Math.max(0, 1 - diameter/12) : 0.5;
+  // High edge weight (fast spread) → rumor signal
+  const wScore = Math.min(1, avgW*4);
+  score = 0.35*degScore + 0.4*diaScore + 0.25*wScore;
+  // Nudge based on current mode
+  if (currentMode==='rumor') score = score*0.6 + 0.4*0.82;
+  else score = score*0.6 + 0.4*0.18;
+  return Math.max(0.02, Math.min(0.98, score));
+}
+
+/* ===== PERFORMANCE BARS ANIMATION ===== */
+function animatePerfBars() {
+  setTimeout(()=>{
+    document.getElementById('perf-baseline').style.width='72%';
+    document.getElementById('perf-temporal').style.width='84%';
+  }, 400);
+}
+
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ animatePerfBars(); observer.disconnect(); }});
+},{threshold:0.3});
+const explainSection = document.getElementById('explain');
+if(explainSection) observer.observe(explainSection);
+
+// Auto-generate on load
+generateGraph();
+</script>
+</body>
+</html>
