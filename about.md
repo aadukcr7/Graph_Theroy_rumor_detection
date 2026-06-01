@@ -105,6 +105,16 @@ Those three views are combined into one feature vector so the classifier can dis
 | `templates/` | Holds the HTML pages for the dashboard, about page, and comparison view. |
 | `static/` | Contains CSS and JavaScript for the visual interface. |
 
+## Dependencies used
+
+| Package | What it does | Where it is used |
+| --- | --- | --- |
+| `Flask` | Runs the web server, routes pages, and exposes prediction endpoints. | `app.py` |
+| `NetworkX` | Builds and measures the propagation graphs. | `dataset_generator.py`, `feature_extractor.py` |
+| `NumPy` | Handles numeric calculations such as averages and feature math. | `feature_extractor.py`, `app.py`, `train_model.py` |
+| `Pandas` | Stores data in tables and prepares feature rows for training and inference. | `train_model.py`, `app.py`, `dataset_generator.py` |
+| `scikit-learn` | Trains and evaluates the classifier. | `train_model.py`, `app.py` |
+
 ## Main flow in simple terms
 
 1. Generate or load propagation data.
