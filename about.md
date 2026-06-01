@@ -115,6 +115,27 @@ Those three views are combined into one feature vector so the classifier can dis
 | `Pandas` | Stores data in tables and prepares feature rows for training and inference. | `train_model.py`, `app.py`, `dataset_generator.py` |
 | `scikit-learn` | Trains and evaluates the classifier. | `train_model.py`, `app.py` |
 
+## Graph theory concepts used
+
+| Concept | Where it is used | Why it matters |
+| --- | --- | --- |
+| Directed graph | `dataset_generator.py`, `feature_extractor.py`, `app.py` | Models the direction of information flow from a source node to later reposts. |
+| Tree structure | `dataset_generator.py` | Keeps each cascade as a propagation tree so the spread is easy to analyze and visualize. |
+| Graph density | `feature_extractor.py` | Shows how tightly connected the cascade is; rumor-like cascades often look more compact. |
+| Degree and average degree | `feature_extractor.py` | Measure how many connections each node has and whether the spread is hub-heavy or sparse. |
+| Diameter | `feature_extractor.py` | Captures the longest shortest path and helps distinguish compact from stretched-out propagation. |
+| Radius and center | `feature_extractor.py` | Identify the most central part of the graph and show where diffusion is structurally focused. |
+| Shortest paths | `feature_extractor.py` | Support diameter, radius, and average path calculations that describe cascade shape. |
+| Clustering | `feature_extractor.py` | Measures local grouping in the graph and helps describe how tightly the spread is organized. |
+| Degree centrality | `feature_extractor.py` | Shows which nodes are locally influential and whether a source dominates the network. |
+| Betweenness centrality | `feature_extractor.py` | Detects bridge nodes that sit on many shortest paths between other nodes. |
+| Closeness centrality | `feature_extractor.py` | Measures how quickly a node can reach the rest of the graph. |
+| Degree centralization | `feature_extractor.py` | Summarizes whether the graph is centered around one highly dominant node. |
+| Branching factor | `feature_extractor.py` | Measures how quickly the tree fans out from a node, which helps separate star-like and chain-like spread. |
+| Leaf ratio | `feature_extractor.py` | Shows how many nodes are terminal endpoints instead of spreading further. |
+| Temporal edge weights | `dataset_generator.py`, `feature_extractor.py`, `static/js/app.js` | Encode how fast reposts happen so speed is visible in both the features and the graph edges. |
+| Diffusion speed | `feature_extractor.py` | Converts delay information into a single measure of how quickly the cascade spreads overall. |
+
 ## Main flow in simple terms
 
 1. Generate or load propagation data.
