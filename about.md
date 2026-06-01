@@ -1,14 +1,15 @@
 ## About — Project flow and purpose
 
-This project is a graph-theory based rumor detection demo. It studies how information spreads through a propagation tree, extracts structural and temporal features from that tree, and uses those features to predict whether a cascade looks rumor-like or organic.
+This project is a graph-theory based rumor detection demo. It studies how information spreads through a propagation tree, extracts structural and temporal features from that tree, and uses those features to predict whether a cascade looks rumor-like or organic. The goal is to make the process explainable, so the prediction can be traced back to measurable graph properties instead of a black-box representation.
 
 ## What this project does
 
-- Builds synthetic propagation graphs from the dataset and feature pipeline.
+- Builds synthetic propagation graphs from the dataset generation logic.
 - Extracts graph structure, centrality, and time-based features from each cascade.
 - Trains a machine-learning classifier on those features.
 - Serves predictions through a Flask app and displays the graph in the browser.
 - Lets you compare rumor-like and organic propagation patterns side by side.
+- Uses an interactive visualization so the graph can be inspected, dragged, zoomed, and compared.
 
 ## How it is done
 
@@ -30,6 +31,34 @@ flowchart LR
 ```
 
 The workflow starts with a propagation graph, turns that graph into numeric features, trains a classifier, and then uses the trained model to make predictions from the browser interface or the API.
+
+## How the graphs are visualized
+
+The graphs are drawn in the browser with D3.js as SVG force-directed networks. The backend sends node and edge data, and the front-end turns that data into a live layout that settles into place automatically.
+
+### Main graph view
+
+- The main graph is rendered inside an SVG element on the dashboard.
+- D3 force simulation positions the nodes using link, charge, center, and collision forces.
+- The source node is highlighted to show where the propagation begins.
+- Edge thickness reflects temporal weight, so faster reposts appear visually stronger.
+- You can drag nodes manually and use zoom controls to inspect dense areas.
+- Hovering an edge shows the delay, stored weight, and the weight formula used for that edge.
+
+### Comparison view
+
+- The compare page renders two separate SVG graphs side by side.
+- One graph represents rumor-like diffusion and the other represents organic diffusion.
+- Both use the same force-layout approach so the differences in shape are easier to compare.
+- Each graph has its own zoom controls, which makes side-by-side inspection easier.
+- The rumor example is usually more centralized and compact, while the organic example is longer and more chain-like.
+
+### Visual cues used in the design
+
+- Node size and color help identify the source node versus later nodes.
+- Line width encodes temporal strength.
+- Tooltips expose the math behind each edge.
+- The compare page uses different accents for rumor and organic graphs so the two patterns are easy to distinguish.
 
 ## What is being computed
 
@@ -55,6 +84,16 @@ The workflow starts with a propagation graph, turns that graph into numeric feat
 - Temporal edge weights based on how quickly reposts happen.
 - Diffusion speed derived from the average delay.
 
+## What is being analyzed
+
+This project focuses on three things at once:
+
+1. The topology of the graph, meaning how the nodes are connected.
+2. The influence structure, meaning which nodes act like hubs or bridges.
+3. The timing of the spread, meaning how fast the information moves through the network.
+
+Those three views are combined into one feature vector so the classifier can distinguish different propagation styles.
+
 ## What each file does
 
 | File | Role |
@@ -73,12 +112,14 @@ The workflow starts with a propagation graph, turns that graph into numeric feat
 3. Measure the graph with structural and temporal features.
 4. Train a classifier on those features.
 5. Send the model output to the Flask app and render it in the UI.
+6. Compare the rendered graph against known rumor-like and organic patterns.
 
 ## Why this approach is used
 
 - It keeps the model explainable because the prediction comes from explicit graph measurements.
 - It makes the project easier to inspect than a black-box graph neural network.
 - It works well for showing how rumor propagation differs from slower, more organic diffusion patterns.
+- It supports visual interpretation, which makes it useful for demonstrations, reports, and classroom-style explanations.
 
 ## Visual summary
 
@@ -102,3 +143,4 @@ Researchers, students, and engineers who want a compact, explainable demonstrati
 
 - The project is a prototype, so results should be validated carefully before using the ideas in real-world research.
 - The current UI already includes an About page and a comparison view, so this document is meant to explain the full pipeline behind them.
+- If you want, I can also turn this into a more polished visual layout with callout boxes, badges, and a cleaner section design.
