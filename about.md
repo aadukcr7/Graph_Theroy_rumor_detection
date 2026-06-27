@@ -1,177 +1,102 @@
-## About — Project flow and purpose
+## About This Project
 
-This project is a graph-theory based rumor detection demo. It studies how information spreads through a propagation tree, extracts structural and temporal features from that tree, and uses those features to predict whether a cascade looks rumor-like or organic. The goal is to make the process explainable, so the prediction can be traced back to measurable graph properties instead of a black-box representation.
+This project is a graph-theory based rumor detection demo. It models each cascade as a temporal propagation tree, extracts interpretable structural and timing features, and uses those features to classify the cascade as rumor-like or organic. The goal is explainability: the prediction should be traceable to graph measurements rather than a black-box embedding model.
 
-## What this project does
+## What The Code Actually Does
 
-- Builds synthetic propagation graphs from the dataset generation logic.
-- Extracts graph structure, centrality, and time-based features from each cascade.
-- Trains a machine-learning classifier on those features.
-- Serves predictions through a Flask app and displays the graph in the browser.
-- Lets you compare rumor-like and organic propagation patterns side by side.
-- Uses an interactive visualization so the graph can be inspected, dragged, zoomed, and compared.
+- Generates synthetic rumor and organic cascades locally with NetworkX.
+- Assigns each edge a delay, cumulative timestamp, and temporal weight.
+- Extracts 18 hand-crafted graph and diffusion features.
+- Trains a RandomForestClassifier on the labeled dataset.
+- Serves the model through a Flask app with `/`, `/about`, `/compare`, `/predict`, and `/generate-graph` routes.
+- Renders the propagation tree in the browser with D3.js and supports zooming, dragging, and edge tooltips.
 
-## How it is done
+## Pipeline
 
 ```mermaid
 flowchart LR
-    A[Raw dataset<br/>rumor_dataset.csv] --> B[Graph generation<br/>dataset_generator.py]
-    B --> C[Feature extraction<br/>feature_extractor.py]
-    C --> D[Model training<br/>train_model.py]
-    D --> E[Saved model<br/>rumor_model.pkl]
-    E --> F[Flask app<br/>app.py]
-    F --> G[Web UI<br/>templates/ + static/]
-
-    classDef dataStyle fill:#FFF3C4,stroke:#5A4B00,stroke-width:1px;
-    classDef processStyle fill:#DCEEFF,stroke:#174A7E,stroke-width:1px;
-    classDef modelStyle fill:#DFF7DF,stroke:#2E6B2E,stroke-width:1px;
-    class A dataStyle;
-    class B,C,D,F,G processStyle;
-    class E modelStyle;
+    A[dataset_generator.py] --> B[rumor_dataset.csv]
+    B --> C[train_model.py]
+    C --> D[rumor_model.pkl]
+    D --> E[app.py]
+    E --> F[templates/ + static/]
 ```
 
-The workflow starts with a propagation graph, turns that graph into numeric features, trains a classifier, and then uses the trained model to make predictions from the browser interface or the API.
+The dataset generator builds 500 rumor graphs and 500 organic graphs by default. Training then loads `rumor_dataset.csv`, fits a RandomForest model, and stores the trained bundle in `rumor_model.pkl`. When the Flask app starts, it loads the saved bundle or trains it if the artifact is missing.
 
-## How the graphs are visualized
+## Graph Generation
 
-The graphs are drawn in the browser with D3.js as SVG force-directed networks. The backend sends node and edge data, and the front-end turns that data into a live layout that settles into place automatically.
+Rumor graphs are generated as star-like, hub-heavy, or branched trees with short delays. Organic graphs are generated as path-like, sparse, or lightly branched trees with longer delays. Every edge stores:
 
-### Main graph view
+- `delay`: the propagation delay from parent to child
+- `timestamp`: the cumulative arrival time of the child node
+- `weight`: the temporal edge weight computed as `1 / ln(1 + delta_t)`
 
-- The main graph is rendered inside an SVG element on the dashboard.
-- D3 force simulation positions the nodes using link, charge, center, and collision forces.
-- The source node is highlighted to show where the propagation begins.
-- Edge thickness reflects temporal weight, so faster reposts appear visually stronger.
-- You can drag nodes manually and use zoom controls to inspect dense areas.
-- Hovering an edge shows the delay, stored weight, and the weight formula used for that edge.
+The source node is always node `0`. In the UI it is labeled `Source` and highlighted as the root of the cascade.
 
-### Comparison view
+## Features Used By The Model
 
-- The compare page renders two separate SVG graphs side by side.
-- One graph represents rumor-like diffusion and the other represents organic diffusion.
-- Both use the same force-layout approach so the differences in shape are easier to compare.
-- Each graph has its own zoom controls, which makes side-by-side inspection easier.
-- The rumor example is usually more centralized and compact, while the organic example is longer and more chain-like.
+The classifier uses these 18 features:
 
-### Visual cues used in the design
+1. nodes
+2. edges
+3. avg_degree
+4. max_degree
+5. density
+6. diameter
+7. radius
+8. clustering
+9. avg_shortest_path
+10. degree_centrality_mean
+11. degree_centrality_max
+12. betweenness_mean
+13. closeness_mean
+14. centralization
+15. avg_temporal_weight
+16. diffusion_speed
+17. branching_factor
+18. leaf_ratio
 
-- Node size and color help identify the source node versus later nodes.
-- Line width encodes temporal strength.
-- Tooltips expose the math behind each edge.
-- The compare page uses different accents for rumor and organic graphs so the two patterns are easy to distinguish.
+The feature extractor also computes a human-readable graph center label for the dashboard, even though that value is not part of the model input.
 
-## What is being computed
+## Web App
 
-### Graph-level features
+The Flask app serves three pages:
 
-- Number of nodes and edges.
-- Average degree and maximum degree.
-- Density, diameter, radius, and graph center.
-- Average shortest path length and clustering behavior.
+- Home dashboard: generates a new cascade, renders the graph, and shows the model prediction.
+- About page: explains the graph-theory and temporal features used in the project.
+- Compare page: shows a rumor example and an organic example side by side.
 
-### Shape and influence features
+The dashboard graph is drawn with D3 force simulation and includes zoom controls plus drag interaction. Hovering an edge shows the delay, stored weight, and the weight formula. The compare page uses the same D3 rendering approach with separate zoom controls for each example graph.
 
-- Degree centrality.
-- Betweenness centrality.
-- Closeness centrality.
-- Degree centralization.
-- Branching factor and leaf ratio.
+## Key Files
 
-### Temporal features
-
-- Repost delay for each edge.
-- Timestamp accumulation along the cascade.
-- Temporal edge weights based on how quickly reposts happen.
-- Diffusion speed derived from the average delay.
-
-## What is being analyzed
-
-This project focuses on three things at once:
-
-1. The topology of the graph, meaning how the nodes are connected.
-2. The influence structure, meaning which nodes act like hubs or bridges.
-3. The timing of the spread, meaning how fast the information moves through the network.
-
-Those three views are combined into one feature vector so the classifier can distinguish different propagation styles.
-
-## What each file does
-
-| File | Role |
+| File | Purpose |
 | --- | --- |
-| `dataset_generator.py` | Creates and prepares graph-shaped rumor and non-rumor samples. |
-| `feature_extractor.py` | Converts each graph into a feature vector. |
-| `train_model.py` | Trains the classifier and saves the final model bundle. |
-| `app.py` | Loads the model and serves prediction endpoints plus the web pages. |
-| `templates/` | Holds the HTML pages for the dashboard, about page, and comparison view. |
-| `static/` | Contains CSS and JavaScript for the visual interface. |
+| `dataset_generator.py` | Builds synthetic rumor and organic propagation trees. |
+| `feature_extractor.py` | Converts each graph into numerical features. |
+| `train_model.py` | Trains the classifier and saves `rumor_model.pkl`. |
+| `app.py` | Loads the model and serves the Flask routes and API endpoints. |
+| `templates/` | HTML templates for the dashboard, about page, and comparison page. |
+| `static/` | CSS and JavaScript for the interactive visualization. |
+| `rumor_dataset.csv` | Generated training dataset. |
 
-## Dependencies used
+## Why This Approach
 
-| Package | What it does | Where it is used |
-| --- | --- | --- |
-| `Flask` | Runs the web server, routes pages, and exposes prediction endpoints. | `app.py` |
-| `NetworkX` | Builds and measures the propagation graphs. | `dataset_generator.py`, `feature_extractor.py` |
-| `NumPy` | Handles numeric calculations such as averages and feature math. | `feature_extractor.py`, `app.py`, `train_model.py` |
-| `Pandas` | Stores data in tables and prepares feature rows for training and inference. | `train_model.py`, `app.py`, `dataset_generator.py` |
-| `scikit-learn` | Trains and evaluates the classifier. | `train_model.py`, `app.py` |
+- It keeps the model interpretable because each prediction comes from explicit graph metrics.
+- It fits a graph theory project better than a graph neural network because the reasoning is visible.
+- It makes the rumor vs organic contrast easy to explain visually and mathematically.
 
-## Graph theory concepts used
+## Run Order
 
-| Concept | Where it is used | Why it matters |
-| --- | --- | --- |
-| Directed graph | `dataset_generator.py`, `feature_extractor.py`, `app.py` | Models the direction of information flow from a source node to later reposts. |
-| Tree structure | `dataset_generator.py` | Keeps each cascade as a propagation tree so the spread is easy to analyze and visualize. |
-| Graph density | `feature_extractor.py` | Shows how tightly connected the cascade is; rumor-like cascades often look more compact. |
-| Degree and average degree | `feature_extractor.py` | Measure how many connections each node has and whether the spread is hub-heavy or sparse. |
-| Diameter | `feature_extractor.py` | Captures the longest shortest path and helps distinguish compact from stretched-out propagation. |
-| Radius and center | `feature_extractor.py` | Identify the most central part of the graph and show where diffusion is structurally focused. |
-| Shortest paths | `feature_extractor.py` | Support diameter, radius, and average path calculations that describe cascade shape. |
-| Clustering | `feature_extractor.py` | Measures local grouping in the graph and helps describe how tightly the spread is organized. |
-| Degree centrality | `feature_extractor.py` | Shows which nodes are locally influential and whether a source dominates the network. |
-| Betweenness centrality | `feature_extractor.py` | Detects bridge nodes that sit on many shortest paths between other nodes. |
-| Closeness centrality | `feature_extractor.py` | Measures how quickly a node can reach the rest of the graph. |
-| Degree centralization | `feature_extractor.py` | Summarizes whether the graph is centered around one highly dominant node. |
-| Branching factor | `feature_extractor.py` | Measures how quickly the tree fans out from a node, which helps separate star-like and chain-like spread. |
-| Leaf ratio | `feature_extractor.py` | Shows how many nodes are terminal endpoints instead of spreading further. |
-| Temporal edge weights | `dataset_generator.py`, `feature_extractor.py`, `static/js/app.js` | Encode how fast reposts happen so speed is visible in both the features and the graph edges. |
-| Diffusion speed | `feature_extractor.py` | Converts delay information into a single measure of how quickly the cascade spreads overall. |
-
-## Main flow in simple terms
-
-1. Generate or load propagation data.
-2. Build a graph for each cascade.
-3. Measure the graph with structural and temporal features.
-4. Train a classifier on those features.
-5. Send the model output to the Flask app and render it in the UI.
-6. Compare the rendered graph against known rumor-like and organic patterns.
-
-## Why this approach is used
-
-- It keeps the model explainable because the prediction comes from explicit graph measurements.
-- It makes the project easier to inspect than a black-box graph neural network.
-- It works well for showing how rumor propagation differs from slower, more organic diffusion patterns.
-- It supports visual interpretation, which makes it useful for demonstrations, reports, and classroom-style explanations.
-
-## Visual summary
-
-```mermaid
-flowchart TD
-    R[Propagation input] --> G[Graph structure]
-    G --> F[Feature vector]
-    F --> M[Classifier prediction]
-    M --> U[Browser visualization]
-
-    G --> S[Topology: nodes, edges, density, diameter]
-    G --> T[Timing: delay, temporal weight, diffusion speed]
-    G --> C[Shape: centrality, center, branching, leaf ratio]
-```
-
-## Intended audience
-
-Researchers, students, and engineers who want a compact, explainable demonstration of rumor detection on graph data. The focus is clarity, reproducibility, and visual inspection rather than large-scale production deployment.
+1. Create and activate the virtual environment.
+2. Install dependencies from `requirements.txt`.
+3. Run `python dataset_generator.py` if you want to regenerate the dataset.
+4. Run `python train_model.py` to train and save the model bundle.
+5. Run `python app.py` to start the Flask server.
 
 ## Notes
 
-- The project is a prototype, so results should be validated carefully before using the ideas in real-world research.
-- The current UI already includes an About page and a comparison view, so this document is meant to explain the full pipeline behind them.
-- If you want, I can also turn this into a more polished visual layout with callout boxes, badges, and a cleaner section design.
+- The project is a prototype and is intended for demonstration and study.
+- The current implementation uses a RandomForest model, not a GNN.
+- The browser UI is part of the codebase, so the documentation should describe both the math and the interface.
