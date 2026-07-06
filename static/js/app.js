@@ -84,8 +84,8 @@ function renderStats(features) {
 }
 
 function renderGraph(graphData) {
-  const width = 860;
-  const height = 560;
+  const width = 960;
+  const height = 680;
 
   svg.selectAll("*").remove();
 
@@ -107,13 +107,13 @@ function renderGraph(graphData) {
 
   mainZoomBehavior = d3
     .zoom()
-    .scaleExtent([0.35, 2.8])
+    .scaleExtent([0.22, 3.2])
     .on("zoom", (event) => {
       container.attr("transform", event.transform);
     });
 
   svg.call(mainZoomBehavior);
-  svg.call(mainZoomBehavior.transform, d3.zoomIdentity.scale(0.82).translate(18, 12));
+  svg.call(mainZoomBehavior.transform, d3.zoomIdentity.scale(0.7).translate(18, 12));
 
   currentSimulation = simulation;
 
@@ -369,7 +369,7 @@ if (zoomInButton) {
 if (zoomResetButton) {
   zoomResetButton.addEventListener("click", () => {
     if (svg.node() && mainZoomBehavior) {
-      svg.transition().duration(180).call(mainZoomBehavior.transform, d3.zoomIdentity.scale(0.82).translate(18, 12));
+      svg.transition().duration(180).call(mainZoomBehavior.transform, d3.zoomIdentity.scale(0.7).translate(18, 12));
     }
   });
 }

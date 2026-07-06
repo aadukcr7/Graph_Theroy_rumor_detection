@@ -250,7 +250,7 @@ body {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1.4fr 0.9fr;
+  grid-template-columns: 1.65fr 0.85fr;
   gap: 18px;
   margin-top: 18px;
 }
@@ -598,7 +598,7 @@ body {
 
 #graph-svg {
   width: 100%;
-  min-height: 560px;
+  min-height: 680px;
   background:
     radial-gradient(circle at center, rgba(47, 139, 255, 0.12), transparent 60%),
     linear-gradient(180deg, rgba(7, 14, 28, 0.96), rgba(4, 9, 20, 0.98));
