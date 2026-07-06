@@ -1,14 +1,15 @@
 # Structural Diffusion Analysis
 
-This project is a graph-theory based rumor detection demo. It builds synthetic propagation trees, extracts interpretable structural and temporal features, and uses a RandomForestClassifier to predict whether a cascade looks rumor-like or organic.
+This project is a graph-theory based rumor detection demo. It builds synthetic propagation trees, extracts interpretable structural and temporal features, and uses a RandomForest model to predict whether a cascade looks rumor-like or organic.
 
 ## What It Does
 
-- Generates 500 rumor cascades and 500 organic cascades with NetworkX.
+- Generates synthetic rumor and organic cascades with NetworkX.
 - Assigns each edge a delay, timestamp, and temporal weight.
 - Trains a RandomForest model on 18 hand-crafted graph features.
 - Serves a Flask web app with a live propagation graph, a comparison page, and an About page.
 - Exposes prediction and graph-generation endpoints for the frontend.
+- Lets the dashboard generate graphs up to 1000 vertices and shows the generation time in the UI.
 
 ## Project Layout
 
