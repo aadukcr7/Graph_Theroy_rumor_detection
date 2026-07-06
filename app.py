@@ -106,6 +106,8 @@ def generate_graph_endpoint():
     except (TypeError, ValueError):
         vertex_count = 12
 
+    vertex_count = max(3, vertex_count)
+
     graph = generate_graph(label, vertex_count)
     graph_payload = graph_to_payload(graph, label=label)
 
