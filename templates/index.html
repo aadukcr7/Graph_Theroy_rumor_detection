@@ -73,7 +73,17 @@
           <form id="graph-form" class="control-form">
             <label>
               <span>Number of vertices</span>
-              <input id="vertex-count" type="number" min="3" step="1" value="12" />
+              <input
+                id="vertex-count"
+                type="number"
+                min="3"
+                max="1000"
+                step="1"
+                value="12"
+                oninput="if (Number(this.value) > 1000) { this.setCustomValidity('Please enter 1000 vertices or fewer.'); document.getElementById('vertex-count-error').textContent = 'Please enter 1000 vertices or fewer.'; } else { this.setCustomValidity(''); document.getElementById('vertex-count-error').textContent = ''; }"
+                oninvalid="this.setCustomValidity('Please enter 1000 vertices or fewer.'); document.getElementById('vertex-count-error').textContent = 'Please enter 1000 vertices or fewer.';"
+              />
+              <small id="vertex-count-error" style="min-height: 1.15em; color: #ff8f8f; font-size: 0.86rem; line-height: 1.35;" aria-live="polite"></small>
             </label>
             <label>
               <span>Graph type</span>
