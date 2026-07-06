@@ -2,6 +2,7 @@ const statsGrid = document.getElementById("stats-grid");
 const predictionBadge = document.getElementById("prediction-badge");
 const predictionResult = document.getElementById("prediction-result");
 const confidenceResult = document.getElementById("confidence-result");
+const generationTimeResult = document.getElementById("generation-time-result");
 const generateForm = document.getElementById("graph-form");
 const generateButton = document.getElementById("generate-button");
 const vertexCountInput = document.getElementById("vertex-count");
@@ -327,6 +328,7 @@ async function generateGraph() {
 async function refreshGraph() {
   generateButton.disabled = true;
   generateButton.textContent = "Generating...";
+  const startedAt = performance.now();
 
   try {
     const result = await generateGraph();
@@ -334,8 +336,14 @@ async function refreshGraph() {
     renderGraph(currentGraph);
     renderStats(currentGraph.features);
     setPredictionState(result.prediction, result.confidence);
+    if (generationTimeResult) {
+      generationTimeResult.textContent = `${((performance.now() - startedAt) / 1000).toFixed(2)} s`;
+    }
   } catch (error) {
     setPredictionState("--", 0.0);
+    if (generationTimeResult) {
+      generationTimeResult.textContent = "--";
+    }
     console.error(error);
   } finally {
     generateButton.disabled = false;
